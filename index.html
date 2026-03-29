@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" class="overscroll-none">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meijie Hu</title>
+  <meta name="description" content="Meijie Hu is a designer who creates simple, thoughtful digital experiences with a minimalist, detail-driven approach." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Neue Montreal"', 'Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="antialiased margin-x-1 bg-black font-sans select-none">
+
+  <!-- Intro Page -->
+  <div id="introPage" class="fixed inset-0 z-[51] bg-white">
+    <div class="h-full flex items-center padding-1">
+      <div class="span-ml-2">
+        <p id="introText" class="span-w-5 text-black leading-[200%] opacity-0" style="font-size: clamp(13px, 1.4vw, 19px);">
+          Hi I'm Meijie! I am a Product Designer @ Meta Reality Labs for Ray-Ban Meta Display glasses. Rare fluency across hardware, software, platform design, and HCI research — shipping production work at the frontier of human–computer interaction.
+        </p>
+      </div>
+    </div>
+    <div id="scrollIndicator" class="absolute bottom-[5vh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-0">
+      <span class="text-[10px] uppercase tracking-[0.2em] text-black/30 font-medium">Scroll</span>
+      <div class="w-[1px] h-[20px] bg-black/10 overflow-hidden relative">
+        <div id="scrollLine" class="absolute inset-0 bg-black/40"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 w-screen z-[52] padding-1">
+    <div class="w-full text-black flex justify-between items-center text-[11px] max-md:text-[11px] font-medium uppercase">
+      <a aria-label="Home" class="cursor-pointer max-md:h-full" href="/">
+        <h1 class="span-w-2 text-black">Meijie Hu</h1>
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="flex gutter-gap-1">
+          <li id="navIntro" class="cursor-pointer hover:opacity-50 transition-opacity duration-200 nav-active">Intro</li>
+          <li id="navJourney" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">My Journey</li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Section -->
+  <section class="max-h-screen overflow-hidden span-w-screen span-ml-2 justify-center bg-white">
+
+    <!-- Custom Cursor Crosshair -->
+    <div class="fixed top-0 left-0 w-screen h-screen pointer-events-none z-50 flex justify-center items-center mix-blend-difference">
+      <div id="pixelCrosshair" class="relative w-fit h-fit">
+        <div id="cursorBox" style="border-color: #fff" class="h-[8px] w-[8px] border pointer-events-auto z-[100] cursor-pointer fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+        <div id="cursorFill" style="clip-path: inset(100%); background-color: #fff" class="h-[10px] w-[10px] pointer-events-auto z-[100] cursor-pointer fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+        <p id="pixelText" class="text-white pl-4 w-fit text-nowrap text-[11px] font-medium uppercase overflow-hidden absolute top-1/2 left-0 transform -translate-y-1/2">
+          <span id="projectText" class="translate-y-full block max-md:opacity-0">OPEN PROJECT</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="flex flex-col gutter-gap-1">
+
+      <!-- Loading Bar -->
+      <div id="loaderContainer" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[8px] w-[8px] border-[1px] border-black z-[5000] origin-bottom duration-200 ease-in-out">
+        <span id="loaderBar" class="block w-full h-full origin-bottom bg-black scale-y-0"></span>
+      </div>
+
+      <!-- Timeline Layout -->
+      <div id="vertical-layout" class="flex items-center h-screen span-mx-1 padding-x-1 opacity-0 pointer-events-none">
+
+        <!-- Center Vertical Image Carousel -->
+        <div id="center-carousel" class="absolute top-0 h-screen z-[47] overflow-y-auto max-md:hidden" style="width: 42vw; left: 50%; transform: translateX(-28%);">
+          <div id="center-carousel-track" class="flex flex-col gap-[4vh] items-start" style="will-change: transform;">
+            <img src="assets/CMU-1.png" alt="CMU" class="center-carousel-item" data-index="0" style="width: 90%;" draggable="false" />
+            <video src="assets/CMU-2.mov" class="center-carousel-item" data-index="1" style="width: 90%;" muted loop playsinline></video>
+            <video src="assets/Ogilvy.mp4" class="center-carousel-item" data-index="2" style="width: 78%;" muted loop playsinline></video>
+            <video src="assets/Punchcut-1.mp4" class="center-carousel-item" data-index="3" style="width: 84%;" muted loop playsinline></video>
+            <img src="assets/ITP-1.gif" alt="ITP" class="center-carousel-item" data-index="4" style="width: 82%;" draggable="false" />
+            <img src="assets/ITP-2.gif" alt="ITP" class="center-carousel-item" data-index="5" style="width: 82%;" draggable="false" />
+            <img src="assets/Meta-Horizon.png" alt="Meta Horizon" class="center-carousel-item" data-index="6" style="width: 72%;" draggable="false" />
+            <video src="assets/LucidRealityLabs.mp4" class="center-carousel-item" data-index="7" style="width: 88%;" muted loop playsinline></video>
+            <video src="assets/LucidRealityLabs-2.mov" class="center-carousel-item" data-index="8" style="width: 88%;" muted loop playsinline></video>
+            <img src="assets/LucidRealityLabs-3.png" alt="Lucid Reality Labs" class="center-carousel-item" data-index="9" style="width: 88%;" draggable="false" />
+            <img src="assets/Meta-Wearable.png" alt="Meta Wearable" class="center-carousel-item" data-index="10" style="width: 80%;" draggable="false" />
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div id="timeline" class="relative flex flex-col justify-between h-full py-[12vh] max-md:hidden" style="width: 36vw; padding-left: 1.5vw;">
+
+          <div class="timeline-entry multi-year text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="0,1" data-span-to="3">
+            <span class="timeline-year">2017—2021</span>
+            <span class="timeline-title">CMU</span>
+          </div>
+
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="2">
+            <span class="timeline-year">2018</span>
+            <div class="timeline-content">
+              <span class="timeline-title">Ogilvy</span>
+              <span class="timeline-subtitle">Art Direction</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="3">
+            <span class="timeline-year">2021</span>
+            <div class="timeline-content">
+              <span class="timeline-title">Punchcut</span>
+              <span class="timeline-subtitle">Design Prototyper</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry multi-year text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="4,5" data-span-to="5">
+            <span class="timeline-year">2021—2023</span>
+            <span class="timeline-title">ITP</span>
+          </div>
+
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="6">
+            <span class="timeline-year">2022</span>
+            <div class="timeline-content">
+              <span class="timeline-title">Meta RL</span>
+              <span class="timeline-subtitle">PD @ Horizon App</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="7,8,9">
+            <span class="timeline-year">2023</span>
+            <div class="timeline-content">
+              <span class="timeline-title">Lucid Reality Labs</span>
+              <span class="timeline-subtitle">XR Design Lead</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="">
+            <span class="timeline-year">2025</span>
+            <div class="timeline-content">
+              <span class="timeline-title">TCL</span>
+              <span class="timeline-subtitle">Design Strategist</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="10">
+            <span class="timeline-year">Now</span>
+            <div class="timeline-content">
+              <span class="timeline-title">Meta RL</span>
+              <span class="timeline-subtitle">PD @ Wearables</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Mobile Timeline -->
+        <div id="timelineMobile" class="relative flex flex-col justify-between h-full py-[10vh] md:hidden" style="padding-left: 4vw; width: 100%;">
+
+          <div class="timeline-entry-mobile multi-year flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">2017—2021</span>
+            <span>CMU</span>
+          </div>
+
+          <div class="timeline-entry-mobile flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">2018</span>
+            <div>
+              <span class="block">Ogilvy</span>
+              <span class="block opacity-40">Art Direction</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry-mobile flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">2021</span>
+            <div>
+              <span class="block">Punchcut</span>
+              <span class="block opacity-40">Design Prototyper</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry-mobile multi-year flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">2021—2023</span>
+            <span>ITP</span>
+          </div>
+
+          <div class="timeline-entry-mobile flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">2022</span>
+            <div>
+              <span class="block">Meta RL</span>
+              <span class="block opacity-40">PD @ Horizon App</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry-mobile flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">2023</span>
+            <div>
+              <span class="block">Lucid Reality Labs</span>
+              <span class="block opacity-40">XR Design Lead</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry-mobile flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">2025</span>
+            <div>
+              <span class="block">TCL</span>
+              <span class="block opacity-40">Design Strategist</span>
+            </div>
+          </div>
+
+          <div class="timeline-entry-mobile flex items-start gap-4 cursor-pointer opacity-0 text-[11px] uppercase font-medium">
+            <span style="min-width: 22vw;">Now</span>
+            <div>
+              <span class="block">Meta RL</span>
+              <span class="block opacity-40">PD @ Wearables</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Media Overlay -->
+  <div id="mediaOverlay" class="fixed inset-0 z-[55] flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+    <div id="mediaOverlayBg" class="absolute inset-0 bg-black" style="opacity: 0.2;"></div>
+    <div id="mediaOverlayContent" class="relative z-10 max-w-[85vw] max-h-[85vh]"></div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
