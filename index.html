@@ -22,6 +22,12 @@
 </head>
 <body class="antialiased margin-x-1 bg-black font-sans select-none">
 
+  <!-- What is E Page -->
+  <div id="whatIsEPage" class="fixed inset-0 z-[49]" style="background: #e8e3de; opacity: 0; pointer-events: none;">
+    <p id="whatIsETitle" style="position: absolute; top: 2.6vw; left: 50%; transform: translateX(-50%); font-size: clamp(12px, 1.15vw, 16px); font-weight: 300; letter-spacing: 0.3em; color: #1a1a1a; white-space: nowrap; font-family: 'Neue Montreal', Inter, system-ui, sans-serif;">What is E</p>
+    <svg id="envDesignSvg" style="position: absolute; inset: 0; width: 100%; height: 100%;"></svg>
+  </div>
+
   <!-- Intro Page -->
   <div id="introPage" class="fixed inset-0 z-[51] bg-white">
     <div class="h-full flex items-center padding-1">
@@ -49,6 +55,7 @@
         <ul class="flex gutter-gap-1">
           <li id="navIntro" class="cursor-pointer hover:opacity-50 transition-opacity duration-200 nav-active">Intro</li>
           <li id="navJourney" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">My Journey</li>
+          <li id="navWhatIsE" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">What is E</li>
         </ul>
       </nav>
     </div>

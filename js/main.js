@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMediaOverlay();
   initIntroTransition();
   initTimelineSpans();
+  buildEnvDesignDiagram();
 });
 
 /* ==========================================
@@ -236,11 +237,13 @@ function initTimelineSpans() {
    ========================================== */
 function initIntroTransition() {
   var introPage = document.getElementById('introPage');
+  var whatIsEPage = document.getElementById('whatIsEPage');
   var introText = document.getElementById('introText');
   var scrollIndicator = document.getElementById('scrollIndicator');
   var carousel = document.getElementById('center-carousel');
   var navIntro = document.getElementById('navIntro');
   var navJourney = document.getElementById('navJourney');
+  var navWhatIsE = document.getElementById('navWhatIsE');
   if (!introPage) return;
 
   var forwardAccum = 0;
@@ -261,10 +264,11 @@ function initIntroTransition() {
   function updateNav() {
     if (navIntro) navIntro.classList.toggle('nav-active', currentView === 'intro');
     if (navJourney) navJourney.classList.toggle('nav-active', currentView === 'portfolio');
+    if (navWhatIsE) navWhatIsE.classList.toggle('nav-active', currentView === 'whatIsE');
   }
 
   function handleScroll(delta) {
-    if (isTransitioning) return;
+    if (isTransitioning || currentView === 'whatIsE') return;
 
     if (currentView === 'intro') {
       if (delta > 0) {
@@ -299,6 +303,26 @@ function initIntroTransition() {
   function transitionToPortfolio() {
     if (isTransitioning || currentView === 'portfolio') return;
     isTransitioning = true;
+    var prevView = currentView;
+
+    if (prevView === 'whatIsE') {
+      if (whatIsEPage) {
+        gsap.to(whatIsEPage, {
+          opacity: 0, duration: 0.5, ease: 'power2.inOut',
+          onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
+        });
+      }
+      gsap.set(introPage, { yPercent: -100 });
+      introPage.style.pointerEvents = 'none';
+      setTimeout(function() {
+        isTransitioning = false;
+        currentView = 'portfolio';
+        forwardAccum = 0; reverseAccum = 0;
+        updateNav();
+        activatePortfolio();
+      }, 520);
+      return;
+    }
 
     var tl = gsap.timeline({
       onComplete: function() {
@@ -320,7 +344,9 @@ function initIntroTransition() {
   function transitionToIntro() {
     if (isTransitioning || currentView === 'intro') return;
     isTransitioning = true;
-    deactivatePortfolio();
+    var prevView = currentView;
+
+    if (prevView === 'portfolio') deactivatePortfolio();
 
     introPage.style.pointerEvents = '';
     gsap.set(introPage, { yPercent: -100 });
@@ -337,17 +363,57 @@ function initIntroTransition() {
       }
     });
 
-    tl.to(introPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' })
-      .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
-      .to(scrollIndicator, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+    if (prevView === 'whatIsE' && whatIsEPage) {
+      tl.to(whatIsEPage, { opacity: 0, duration: 0.4, ease: 'power2.inOut',
+        onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
+      }, 0)
+        .to(introPage, { yPercent: 0, duration: 0.85, ease: 'power3.inOut' }, 0.15)
+        .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+        .to(scrollIndicator, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+    } else {
+      tl.to(introPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' })
+        .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+        .to(scrollIndicator, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+    }
   }
 
-  if (navJourney) {
-    navJourney.addEventListener('click', function() { transitionToPortfolio(); });
+  function transitionToWhatIsE() {
+    if (isTransitioning || currentView === 'whatIsE') return;
+    isTransitioning = true;
+    var prevView = currentView;
+
+    if (prevView === 'portfolio') {
+      deactivatePortfolio();
+      gsap.set(introPage, { yPercent: -100 });
+      introPage.style.pointerEvents = 'none';
+    }
+
+    if (whatIsEPage) whatIsEPage.style.pointerEvents = 'auto';
+
+    var tl = gsap.timeline({
+      onComplete: function() {
+        isTransitioning = false;
+        currentView = 'whatIsE';
+        forwardAccum = 0; reverseAccum = 0;
+        introPage.style.pointerEvents = 'none';
+        updateNav();
+        animateEnvDiagram();
+      }
+    });
+
+    if (prevView === 'intro') {
+      tl.to(introText, { y: -120, opacity: 0, duration: 0.5, ease: 'power3.inOut' }, 0)
+        .to(scrollIndicator, { opacity: 0, duration: 0.2 }, 0)
+        .to(introPage, { yPercent: -100, duration: 0.7, ease: 'power3.inOut' }, 0.1)
+        .to(whatIsEPage, { opacity: 1, duration: 0.65, ease: 'power2.inOut' }, 0.25);
+    } else {
+      tl.to(whatIsEPage, { opacity: 1, duration: 0.6, ease: 'power2.inOut' }, 0);
+    }
   }
-  if (navIntro) {
-    navIntro.addEventListener('click', function() { transitionToIntro(); });
-  }
+
+  if (navJourney) navJourney.addEventListener('click', function() { transitionToPortfolio(); });
+  if (navIntro) navIntro.addEventListener('click', function() { transitionToIntro(); });
+  if (navWhatIsE) navWhatIsE.addEventListener('click', function() { transitionToWhatIsE(); });
 
   window.addEventListener('wheel', function(e) {
     handleScroll(e.deltaY);
@@ -363,6 +429,145 @@ function initIntroTransition() {
     touchStartY = e.touches[0].clientY;
     handleScroll(delta * 3);
   }, { passive: true });
+}
+
+/* ==========================================
+   What is E — Environment Design Diagram
+   ========================================== */
+function buildEnvDesignDiagram() {
+  var svg = document.getElementById('envDesignSvg');
+  if (!svg) return;
+
+  var NS = 'http://www.w3.org/2000/svg';
+  svg.setAttribute('viewBox', '0 0 1000 680');
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  function el(tag, attrs, text) {
+    var node = document.createElementNS(NS, tag);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  var cX = 175, cY = 340;
+
+  var primaries = [
+    { id: 'set',      label: 'Set design',                   x: 368, y: 165 },
+    { id: 'xr',       label: 'XR design',                    x: 428, y: 262 },
+    { id: 'interior', label: 'Interior Design',              x: 482, y: 368 },
+    { id: 'exp',      label: 'Experiential Branding Design', x: 395, y: 488 },
+  ];
+
+  var secondaries = [
+    { label: 'technical artist',               x: 568, y: 98,  parent: 'set' },
+    { label: '3D artist',                      x: 592, y: 185, parent: 'set' },
+    { label: 'technical artist',               x: 638, y: 198, parent: 'xr'  },
+    { label: 'product design',                 x: 658, y: 270, parent: 'xr'  },
+    { label: 'product design prototyper',      x: 635, y: 345, parent: 'xr'  },
+    { label: 'Environmental graphic designer', x: 612, y: 440, parent: 'exp' },
+    { label: 'art director',                   x: 638, y: 508, parent: 'exp' },
+    { label: 'creative technologist',          x: 612, y: 575, parent: 'exp' },
+  ];
+
+  // Lines
+  var linesG = document.createElementNS(NS, 'g');
+  linesG.setAttribute('id', 'diagram-lines');
+
+  primaries.forEach(function(p) {
+    linesG.appendChild(el('line', {
+      x1: cX, y1: cY, x2: p.x, y2: p.y,
+      stroke: '#1a1a1a', 'stroke-width': '0.75', opacity: '0.28'
+    }));
+  });
+
+  secondaries.forEach(function(s) {
+    var par = primaries.filter(function(p) { return p.id === s.parent; })[0];
+    if (!par) return;
+    linesG.appendChild(el('line', {
+      x1: par.x, y1: par.y, x2: s.x, y2: s.y,
+      stroke: '#1a1a1a', 'stroke-width': '0.55', opacity: '0.18'
+    }));
+  });
+
+  svg.appendChild(linesG);
+
+  // Circles
+  var circlesG = document.createElementNS(NS, 'g');
+  circlesG.setAttribute('id', 'env-circles');
+
+  circlesG.appendChild(el('circle', { cx: cX, cy: cY, r: '7', fill: '#1a1a1a' }));
+  primaries.forEach(function(p) {
+    circlesG.appendChild(el('circle', { cx: p.x, cy: p.y, r: '4.5', fill: '#1a1a1a' }));
+  });
+  secondaries.forEach(function(s) {
+    circlesG.appendChild(el('circle', { cx: s.x, cy: s.y, r: '3', fill: '#666' }));
+  });
+
+  svg.appendChild(circlesG);
+
+  // Labels
+  var labelsG = document.createElementNS(NS, 'g');
+  labelsG.setAttribute('id', 'env-labels');
+
+  var ff = '"Neue Montreal", Inter, system-ui, sans-serif';
+
+  labelsG.appendChild(el('text', {
+    x: cX + 13, y: cY + 4,
+    'font-size': '11', 'font-family': ff,
+    fill: '#1a1a1a', 'font-weight': '500', 'letter-spacing': '0.02em'
+  }, 'Environment Design'));
+
+  primaries.forEach(function(p) {
+    labelsG.appendChild(el('text', {
+      x: p.x + 9, y: p.y + 4,
+      'font-size': '10', 'font-family': ff,
+      fill: '#1a1a1a', 'font-weight': '400'
+    }, p.label));
+  });
+
+  secondaries.forEach(function(s) {
+    labelsG.appendChild(el('text', {
+      x: s.x + 7, y: s.y + 3.5,
+      'font-size': '8.5', 'font-family': ff,
+      fill: '#5a5a5a', 'font-weight': '300'
+    }, s.label));
+  });
+
+  svg.appendChild(labelsG);
+}
+
+function animateEnvDiagram() {
+  var lines = document.querySelectorAll('#diagram-lines line');
+  var circles = document.querySelectorAll('#env-circles circle');
+  var labels = document.querySelectorAll('#env-labels text');
+
+  // Reset to hidden
+  gsap.set(lines, { opacity: 0 });
+  gsap.set(circles, { opacity: 0 });
+  gsap.set(labels, { opacity: 0 });
+
+  // Animate lines
+  lines.forEach(function(line, i) {
+    var target = parseFloat(line.getAttribute('opacity') || 0.25);
+    gsap.to(line, { opacity: target, duration: 0.7, delay: 0.05 + i * 0.065, ease: 'power2.out' });
+  });
+
+  // Animate circles — grow from r=0
+  circles.forEach(function(circle, i) {
+    var finalR = circle.getAttribute('r');
+    gsap.fromTo(circle,
+      { attr: { r: 0 }, opacity: 0 },
+      { attr: { r: finalR }, opacity: 1, duration: 0.45, delay: 0.2 + i * 0.07, ease: 'back.out(1.7)' }
+    );
+  });
+
+  // Animate labels
+  labels.forEach(function(label, i) {
+    gsap.fromTo(label,
+      { opacity: 0, x: -4 },
+      { opacity: 1, x: 0, duration: 0.5, delay: 0.4 + i * 0.045, ease: 'power2.out' }
+    );
+  });
 }
 
 /* ==========================================

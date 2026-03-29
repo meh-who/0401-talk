@@ -341,16 +341,16 @@ img, video { max-width: 100%; height: auto; display: block; }
 }
 
 /* --- Navigation --- */
-#navIntro, #navJourney {
+#navIntro, #navJourney, #navWhatIsE {
   opacity: 0.35;
   transition: opacity 0.3s ease;
 }
 
-#navIntro:hover, #navJourney:hover {
+#navIntro:hover, #navJourney:hover, #navWhatIsE:hover {
   opacity: 0.6;
 }
 
-#navIntro.nav-active, #navJourney.nav-active {
+#navIntro.nav-active, #navJourney.nav-active, #navWhatIsE.nav-active {
   opacity: 1;
 }
 
