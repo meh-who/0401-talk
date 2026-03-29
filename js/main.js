@@ -268,7 +268,7 @@ function initIntroTransition() {
   }
 
   function handleScroll(delta) {
-    if (isTransitioning || currentView === 'whatIsE') return;
+    if (isTransitioning) return;
 
     if (currentView === 'intro') {
       if (delta > 0) {
@@ -277,9 +277,7 @@ function initIntroTransition() {
         introText.style.transform = 'translateY(' + (-progress * 50) + 'px)';
         introText.style.opacity = String(1 - progress * 0.6);
         scrollIndicator.style.opacity = String(Math.max(0, 1 - progress * 3));
-        if (forwardAccum >= forwardThreshold) {
-          transitionToPortfolio();
-        }
+        if (forwardAccum >= forwardThreshold) transitionToPortfolio();
       } else {
         forwardAccum = Math.max(0, forwardAccum + delta);
         var progress = Math.min(forwardAccum / forwardThreshold, 1);
@@ -288,13 +286,23 @@ function initIntroTransition() {
         scrollIndicator.style.opacity = String(Math.max(0, 1 - progress * 3));
       }
     } else if (currentView === 'portfolio') {
-      var atTop = !carousel || carousel.scrollTop <= 1;
+      var atTop    = !carousel || carousel.scrollTop <= 1;
+      var atBottom = carousel  && (carousel.scrollTop + carousel.clientHeight >= carousel.scrollHeight - 10);
       if (delta < 0 && atTop) {
         reverseAccum = Math.min(reverseAccum + Math.abs(delta), reverseThreshold + 100);
-        if (reverseAccum >= reverseThreshold) {
-          transitionToIntro();
-        }
-      } else if (delta > 0) {
+        if (reverseAccum >= reverseThreshold) transitionToIntro();
+      } else if (delta > 0 && atBottom) {
+        forwardAccum = Math.min(forwardAccum + delta, forwardThreshold + 100);
+        if (forwardAccum >= forwardThreshold) transitionToWhatIsE();
+      } else {
+        reverseAccum = 0;
+        if (!atBottom) forwardAccum = 0;
+      }
+    } else if (currentView === 'whatIsE') {
+      if (delta < 0) {
+        reverseAccum = Math.min(reverseAccum + Math.abs(delta), reverseThreshold + 100);
+        if (reverseAccum >= reverseThreshold) transitionToPortfolio();
+      } else {
         reverseAccum = 0;
       }
     }
@@ -306,21 +314,19 @@ function initIntroTransition() {
     var prevView = currentView;
 
     if (prevView === 'whatIsE') {
-      if (whatIsEPage) {
-        gsap.to(whatIsEPage, {
-          opacity: 0, duration: 0.5, ease: 'power2.inOut',
-          onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
-        });
-      }
+      if (_env) _env.stop();
       gsap.set(introPage, { yPercent: -100 });
       introPage.style.pointerEvents = 'none';
-      setTimeout(function() {
-        isTransitioning = false;
-        currentView = 'portfolio';
-        forwardAccum = 0; reverseAccum = 0;
-        updateNav();
-        activatePortfolio();
-      }, 520);
+      gsap.to(whatIsEPage, { yPercent: 100, duration: 0.9, ease: 'power3.inOut',
+        onComplete: function() {
+          whatIsEPage.style.pointerEvents = 'none';
+          isTransitioning = false;
+          currentView = 'portfolio';
+          forwardAccum = 0; reverseAccum = 0;
+          updateNav();
+          activatePortfolio();
+        }
+      });
       return;
     }
 
@@ -364,12 +370,15 @@ function initIntroTransition() {
     });
 
     if (prevView === 'whatIsE' && whatIsEPage) {
-      tl.to(whatIsEPage, { opacity: 0, duration: 0.4, ease: 'power2.inOut',
-        onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
-      }, 0)
-        .to(introPage, { yPercent: 0, duration: 0.85, ease: 'power3.inOut' }, 0.15)
+      if (_env) _env.stop();
+      // Intro slides down over whatIsE (z-51 > z-49), then reset whatIsE
+      tl.to(introPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' }, 0)
         .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
-        .to(scrollIndicator, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+        .to(scrollIndicator, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3')
+        .call(function() {
+          gsap.set(whatIsEPage, { yPercent: 100 });
+          whatIsEPage.style.pointerEvents = 'none';
+        });
     } else {
       tl.to(introPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' })
         .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
@@ -405,9 +414,10 @@ function initIntroTransition() {
       tl.to(introText, { y: -120, opacity: 0, duration: 0.5, ease: 'power3.inOut' }, 0)
         .to(scrollIndicator, { opacity: 0, duration: 0.2 }, 0)
         .to(introPage, { yPercent: -100, duration: 0.7, ease: 'power3.inOut' }, 0.1)
-        .to(whatIsEPage, { opacity: 1, duration: 0.65, ease: 'power2.inOut' }, 0.25);
+        .to(whatIsEPage, { yPercent: 0, duration: 0.85, ease: 'power3.inOut' }, 0.2);
     } else {
-      tl.to(whatIsEPage, { opacity: 1, duration: 0.6, ease: 'power2.inOut' }, 0);
+      // from portfolio — slide whatIsE up from below
+      tl.to(whatIsEPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' }, 0);
     }
   }
 
@@ -432,142 +442,208 @@ function initIntroTransition() {
 }
 
 /* ==========================================
-   What is E — Environment Design Diagram
+   What is E — Three.js Node Diagram
    ========================================== */
+var _env = null;
+
 function buildEnvDesignDiagram() {
-  var svg = document.getElementById('envDesignSvg');
-  if (!svg) return;
+  if (typeof THREE === 'undefined') return;
+  var page = document.getElementById('whatIsEPage');
+  if (!page) return;
 
-  var NS = 'http://www.w3.org/2000/svg';
-  svg.setAttribute('viewBox', '0 0 1000 680');
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  // Canvas
+  var canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;';
+  page.appendChild(canvas);
 
-  function el(tag, attrs, text) {
-    var node = document.createElementNS(NS, tag);
-    for (var k in attrs) node.setAttribute(k, attrs[k]);
-    if (text != null) node.textContent = text;
-    return node;
+  // HTML label overlay
+  var labelCont = document.createElement('div');
+  labelCont.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;';
+  page.appendChild(labelCont);
+
+  var W = window.innerWidth, H = window.innerHeight;
+  var FH = 10;
+  var FW = FH * (W / H);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.OrthographicCamera(-FW/2, FW/2, FH/2, -FH/2, 0.1, 100);
+  camera.position.z = 10;
+
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H, false);
+
+  // Node positions: world coords (y: -5 to 5, x proportional to aspect)
+  var nodes = [
+    { id:'env',      label:'Environment Design',             x:-4.5,  y: 0.1,  r:0.16, type:'center'                 },
+    { id:'set',      label:'Set design',                     x:-1.8,  y: 2.5,  r:0.09, type:'primary'                },
+    { id:'xr',       label:'XR design',                      x:-0.9,  y: 1.15, r:0.09, type:'primary'                },
+    { id:'interior', label:'Interior Design',                x: 0.0,  y:-0.35, r:0.09, type:'primary'                },
+    { id:'exp',      label:'Experiential Branding Design',   x:-1.4,  y:-2.1,  r:0.09, type:'primary'                },
+    { id:'set_ta',   label:'technical artist',               x: 1.0,  y: 3.5,  r:0.055,type:'secondary',parent:'set' },
+    { id:'set_3d',   label:'3D artist',                      x: 1.3,  y: 2.2,  r:0.055,type:'secondary',parent:'set' },
+    { id:'xr_ta',    label:'technical artist',               x: 2.0,  y: 2.0,  r:0.055,type:'secondary',parent:'xr'  },
+    { id:'xr_pd',    label:'product design',                 x: 2.3,  y: 1.0,  r:0.055,type:'secondary',parent:'xr'  },
+    { id:'xr_pdp',   label:'product design prototyper',      x: 1.9,  y:-0.1,  r:0.055,type:'secondary',parent:'xr'  },
+    { id:'exp_eg',   label:'Environmental graphic designer', x: 1.6,  y:-1.45, r:0.055,type:'secondary',parent:'exp' },
+    { id:'exp_ad',   label:'art director',                   x: 2.0,  y:-2.4,  r:0.055,type:'secondary',parent:'exp' },
+    { id:'exp_ct',   label:'creative technologist',          x: 1.6,  y:-3.4,  r:0.055,type:'secondary',parent:'exp' },
+  ];
+
+  var edges = [
+    {from:'env',to:'set'},{from:'env',to:'xr'},{from:'env',to:'interior'},{from:'env',to:'exp'},
+    {from:'set',to:'set_ta'},{from:'set',to:'set_3d'},
+    {from:'xr', to:'xr_ta'},{from:'xr', to:'xr_pd'},{from:'xr',to:'xr_pdp'},
+    {from:'exp',to:'exp_eg'},{from:'exp',to:'exp_ad'},{from:'exp',to:'exp_ct'},
+  ];
+
+  var nodeMap = {};
+  nodes.forEach(function(n) { nodeMap[n.id] = n; n.connected = []; });
+  edges.forEach(function(e) { nodeMap[e.from].connected.push(e.to); nodeMap[e.to].connected.push(e.from); });
+
+  // Meshes
+  nodes.forEach(function(n) {
+    var geo = new THREE.CircleGeometry(n.r, 40);
+    var mat = new THREE.MeshBasicMaterial({ color: n.type === 'secondary' ? 0x999999 : 0x1a1a1a, transparent: true, opacity: 0 });
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(n.x, n.y, 0);
+    scene.add(mesh);
+    n.mesh = mesh;
+    n.baseY = n.y;
+    n.phase = Math.random() * Math.PI * 2;
+  });
+
+  // Edges
+  edges.forEach(function(e) {
+    var fn = nodeMap[e.from], tn = nodeMap[e.to];
+    var geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(fn.x, fn.y, -0.1), new THREE.Vector3(tn.x, tn.y, -0.1)
+    ]);
+    var mat = new THREE.LineBasicMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0 });
+    scene.add(new THREE.Line(geo, mat));
+    e.mesh = scene.children[scene.children.length - 1];
+    e.baseOpacity = (e.from === 'env') ? 0.2 : 0.13;
+  });
+
+  // HTML labels
+  nodes.forEach(function(n) {
+    var div = document.createElement('div');
+    div.className = 'env-label ' + n.type;
+    div.textContent = n.label;
+    div.style.opacity = '0';
+    labelCont.appendChild(div);
+    n.labelEl = div;
+  });
+
+  // Mouse hover
+  var mouse = { x: -999, y: -999 };
+  var hoveredId = null;
+
+  page.addEventListener('mousemove', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width)  *  2 - 1;
+    mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+  });
+  page.addEventListener('mouseleave', function() { mouse.x = -999; mouse.y = -999; });
+
+  function findHovered() {
+    var wx = mouse.x * camera.right, wy = mouse.y * camera.top;
+    var best = null, bestD = Infinity;
+    nodes.forEach(function(n) {
+      var dx = wx - n.mesh.position.x, dy = wy - n.mesh.position.y;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if (d < Math.max(n.r * 5, 0.22) && d < bestD) { best = n; bestD = d; }
+    });
+    return best ? best.id : null;
   }
 
-  var cX = 175, cY = 340;
+  function applyHover(newId) {
+    if (newId === hoveredId) return;
+    hoveredId = newId;
+    if (newId) {
+      var h = nodeMap[newId], conn = {};
+      conn[newId] = true;
+      h.connected.forEach(function(id) { conn[id] = true; });
+      nodes.forEach(function(n) {
+        var active = !!conn[n.id];
+        gsap.to(n.mesh.material, { opacity: active ? 1 : 0.08, duration: 0.2 });
+        n.labelEl.style.opacity = active ? '1' : '0.07';
+        n.labelEl.style.fontWeight = (n.id === newId) ? '600' : '';
+        n.labelEl.style.color     = (n.id === newId) ? '#000' : '';
+      });
+      edges.forEach(function(e) {
+        gsap.to(e.mesh.material, { opacity: (!!conn[e.from] && !!conn[e.to]) ? e.baseOpacity * 4 : 0.02, duration: 0.2 });
+      });
+    } else {
+      nodes.forEach(function(n) {
+        gsap.to(n.mesh.material, { opacity: 1, duration: 0.3 });
+        n.labelEl.style.opacity = '1';
+        n.labelEl.style.fontWeight = '';
+        n.labelEl.style.color = '';
+      });
+      edges.forEach(function(e) { gsap.to(e.mesh.material, { opacity: e.baseOpacity, duration: 0.3 }); });
+    }
+  }
 
-  var primaries = [
-    { id: 'set',      label: 'Set design',                   x: 368, y: 165 },
-    { id: 'xr',       label: 'XR design',                    x: 428, y: 262 },
-    { id: 'interior', label: 'Interior Design',              x: 482, y: 368 },
-    { id: 'exp',      label: 'Experiential Branding Design', x: 395, y: 488 },
-  ];
+  function updateLabels() {
+    nodes.forEach(function(n) {
+      var pos = n.mesh.position.clone().project(camera);
+      n.labelEl.style.left = ((pos.x * 0.5 + 0.5) * W + n.r * W / FW + 7) + 'px';
+      n.labelEl.style.top  = ((-pos.y * 0.5 + 0.5) * H) + 'px';
+    });
+  }
 
-  var secondaries = [
-    { label: 'technical artist',               x: 568, y: 98,  parent: 'set' },
-    { label: '3D artist',                      x: 592, y: 185, parent: 'set' },
-    { label: 'technical artist',               x: 638, y: 198, parent: 'xr'  },
-    { label: 'product design',                 x: 658, y: 270, parent: 'xr'  },
-    { label: 'product design prototyper',      x: 635, y: 345, parent: 'xr'  },
-    { label: 'Environmental graphic designer', x: 612, y: 440, parent: 'exp' },
-    { label: 'art director',                   x: 638, y: 508, parent: 'exp' },
-    { label: 'creative technologist',          x: 612, y: 575, parent: 'exp' },
-  ];
+  var clock = 0, rafId = null, active = false;
 
-  // Lines
-  var linesG = document.createElementNS(NS, 'g');
-  linesG.setAttribute('id', 'diagram-lines');
+  function tick() {
+    if (!active) return;
+    rafId = requestAnimationFrame(tick);
+    clock += 0.012;
+    nodes.forEach(function(n) { n.mesh.position.y = n.baseY + Math.sin(clock + n.phase) * 0.032; });
+    edges.forEach(function(e) {
+      var fn = nodeMap[e.from], tn = nodeMap[e.to];
+      var arr = e.mesh.geometry.attributes.position.array;
+      arr[0] = fn.mesh.position.x; arr[1] = fn.mesh.position.y;
+      arr[3] = tn.mesh.position.x; arr[4] = tn.mesh.position.y;
+      e.mesh.geometry.attributes.position.needsUpdate = true;
+    });
+    applyHover(findHovered());
+    updateLabels();
+    renderer.render(scene, camera);
+  }
 
-  primaries.forEach(function(p) {
-    linesG.appendChild(el('line', {
-      x1: cX, y1: cY, x2: p.x, y2: p.y,
-      stroke: '#1a1a1a', 'stroke-width': '0.75', opacity: '0.28'
-    }));
+  window.addEventListener('resize', function() {
+    W = window.innerWidth; H = window.innerHeight; FW = FH * (W / H);
+    camera.left = -FW/2; camera.right = FW/2; camera.updateProjectionMatrix();
+    renderer.setSize(W, H, false);
   });
 
-  secondaries.forEach(function(s) {
-    var par = primaries.filter(function(p) { return p.id === s.parent; })[0];
-    if (!par) return;
-    linesG.appendChild(el('line', {
-      x1: par.x, y1: par.y, x2: s.x, y2: s.y,
-      stroke: '#1a1a1a', 'stroke-width': '0.55', opacity: '0.18'
-    }));
-  });
+  function playEntrance() {
+    nodes.forEach(function(n) { gsap.set(n.mesh.material, { opacity: 0 }); n.labelEl.style.opacity = '0'; });
+    edges.forEach(function(e) { gsap.set(e.mesh.material, { opacity: 0 }); });
+    hoveredId = null;
+    edges.forEach(function(e, i) {
+      gsap.to(e.mesh.material, { opacity: e.baseOpacity, duration: 0.9, delay: 0.05 + i * 0.07, ease: 'power2.out' });
+    });
+    nodes.forEach(function(n, i) {
+      gsap.to(n.mesh.material, { opacity: 1, duration: 0.55, delay: 0.15 + i * 0.08, ease: 'power2.out' });
+      (function(el, d) { setTimeout(function() { el.style.opacity = '1'; }, d * 1000); })(n.labelEl, 0.3 + i * 0.08);
+    });
+  }
 
-  svg.appendChild(linesG);
+  _env = {
+    start: function() { active = true; playEntrance(); tick(); },
+    stop:  function() {
+      active = false;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      nodes.forEach(function(n) { n.labelEl.style.opacity = '0'; });
+    }
+  };
 
-  // Circles
-  var circlesG = document.createElementNS(NS, 'g');
-  circlesG.setAttribute('id', 'env-circles');
-
-  circlesG.appendChild(el('circle', { cx: cX, cy: cY, r: '7', fill: '#1a1a1a' }));
-  primaries.forEach(function(p) {
-    circlesG.appendChild(el('circle', { cx: p.x, cy: p.y, r: '4.5', fill: '#1a1a1a' }));
-  });
-  secondaries.forEach(function(s) {
-    circlesG.appendChild(el('circle', { cx: s.x, cy: s.y, r: '3', fill: '#666' }));
-  });
-
-  svg.appendChild(circlesG);
-
-  // Labels
-  var labelsG = document.createElementNS(NS, 'g');
-  labelsG.setAttribute('id', 'env-labels');
-
-  var ff = '"Neue Montreal", Inter, system-ui, sans-serif';
-
-  labelsG.appendChild(el('text', {
-    x: cX + 13, y: cY + 4,
-    'font-size': '11', 'font-family': ff,
-    fill: '#1a1a1a', 'font-weight': '500', 'letter-spacing': '0.02em'
-  }, 'Environment Design'));
-
-  primaries.forEach(function(p) {
-    labelsG.appendChild(el('text', {
-      x: p.x + 9, y: p.y + 4,
-      'font-size': '10', 'font-family': ff,
-      fill: '#1a1a1a', 'font-weight': '400'
-    }, p.label));
-  });
-
-  secondaries.forEach(function(s) {
-    labelsG.appendChild(el('text', {
-      x: s.x + 7, y: s.y + 3.5,
-      'font-size': '8.5', 'font-family': ff,
-      fill: '#5a5a5a', 'font-weight': '300'
-    }, s.label));
-  });
-
-  svg.appendChild(labelsG);
 }
 
 function animateEnvDiagram() {
-  var lines = document.querySelectorAll('#diagram-lines line');
-  var circles = document.querySelectorAll('#env-circles circle');
-  var labels = document.querySelectorAll('#env-labels text');
-
-  // Reset to hidden
-  gsap.set(lines, { opacity: 0 });
-  gsap.set(circles, { opacity: 0 });
-  gsap.set(labels, { opacity: 0 });
-
-  // Animate lines
-  lines.forEach(function(line, i) {
-    var target = parseFloat(line.getAttribute('opacity') || 0.25);
-    gsap.to(line, { opacity: target, duration: 0.7, delay: 0.05 + i * 0.065, ease: 'power2.out' });
-  });
-
-  // Animate circles — grow from r=0
-  circles.forEach(function(circle, i) {
-    var finalR = circle.getAttribute('r');
-    gsap.fromTo(circle,
-      { attr: { r: 0 }, opacity: 0 },
-      { attr: { r: finalR }, opacity: 1, duration: 0.45, delay: 0.2 + i * 0.07, ease: 'back.out(1.7)' }
-    );
-  });
-
-  // Animate labels
-  labels.forEach(function(label, i) {
-    gsap.fromTo(label,
-      { opacity: 0, x: -4 },
-      { opacity: 1, x: 0, duration: 0.5, delay: 0.4 + i * 0.045, ease: 'power2.out' }
-    );
-  });
+  if (_env) _env.start();
 }
 
 /* ==========================================
