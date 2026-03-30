@@ -316,7 +316,7 @@ function initIntroTransition() {
     var prevView = currentView;
 
     if (prevView === 'whatIsE') {
-      gsap.killTweensOf(document.querySelectorAll('#diagram-lines line, #env-circles circle, #env-labels text'));
+      if (_env) _env.stop();
       gsap.set(introPage, { yPercent: -100 });
       introPage.style.pointerEvents = 'none';
       gsap.to(whatIsEPage, {
@@ -373,7 +373,7 @@ function initIntroTransition() {
     });
 
     if (prevView === 'whatIsE' && whatIsEPage) {
-      gsap.killTweensOf(document.querySelectorAll('#diagram-lines line, #env-circles circle, #env-labels text'));
+      if (_env) _env.stop();
       // intro (z-51) slides down over whatIsE (z-49), then reset whatIsE
       tl.to(introPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' }, 0)
         .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.35')
@@ -448,8 +448,6 @@ function initIntroTransition() {
 /* ==========================================
    What is E — Environment Design Diagram
    ========================================== */
-var _env = null; // referenced in transition functions; kept null (no stop logic needed)
-
 function buildEnvDesignDiagram() {
   var svg = document.getElementById('envDesignSvg');
   if (!svg) return;
@@ -553,33 +551,36 @@ function buildEnvDesignDiagram() {
 }
 
 function animateEnvDiagram() {
-  var lines   = document.querySelectorAll('#diagram-lines line');
+  var lines = document.querySelectorAll('#diagram-lines line');
   var circles = document.querySelectorAll('#env-circles circle');
-  var labels  = document.querySelectorAll('#env-labels text');
-  if (!lines.length && !circles.length) return;
+  var labels = document.querySelectorAll('#env-labels text');
 
-  // Kill any stale tweens from a previous visit, then reset to hidden
-  gsap.killTweensOf(lines);
-  gsap.killTweensOf(circles);
-  gsap.killTweensOf(labels);
-  gsap.set(lines,   { opacity: 0 });
+  // Reset to hidden
+  gsap.set(lines, { opacity: 0 });
   gsap.set(circles, { opacity: 0 });
-  gsap.set(labels,  { opacity: 0 });
+  gsap.set(labels, { opacity: 0 });
 
-  // Fade lines in to their original attribute opacity
+  // Animate lines
   lines.forEach(function(line, i) {
     var target = parseFloat(line.getAttribute('opacity') || 0.25);
-    gsap.to(line, { opacity: target, duration: 0.6, delay: 0.04 + i * 0.05, ease: 'power2.out' });
+    gsap.to(line, { opacity: target, duration: 0.7, delay: 0.05 + i * 0.065, ease: 'power2.out' });
   });
 
-  // Fade circles in
+  // Animate circles — grow from r=0
   circles.forEach(function(circle, i) {
-    gsap.to(circle, { opacity: 1, duration: 0.5, delay: 0.15 + i * 0.04, ease: 'power2.out' });
+    var finalR = circle.getAttribute('r');
+    gsap.fromTo(circle,
+      { attr: { r: 0 }, opacity: 0 },
+      { attr: { r: finalR }, opacity: 1, duration: 0.45, delay: 0.2 + i * 0.07, ease: 'back.out(1.7)' }
+    );
   });
 
-  // Fade labels in
+  // Animate labels
   labels.forEach(function(label, i) {
-    gsap.to(label, { opacity: 1, duration: 0.5, delay: 0.3 + i * 0.04, ease: 'power2.out' });
+    gsap.fromTo(label,
+      { opacity: 0, x: -4 },
+      { opacity: 1, x: 0, duration: 0.5, delay: 0.4 + i * 0.045, ease: 'power2.out' }
+    );
   });
 }
 
