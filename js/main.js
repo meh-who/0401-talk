@@ -268,7 +268,7 @@ function initIntroTransition() {
   }
 
   function handleScroll(delta) {
-    if (isTransitioning || currentView === 'whatIsE') return;
+    if (isTransitioning) return;
 
     if (currentView === 'intro') {
       if (delta > 0) {
@@ -288,13 +288,23 @@ function initIntroTransition() {
         scrollIndicator.style.opacity = String(Math.max(0, 1 - progress * 3));
       }
     } else if (currentView === 'portfolio') {
-      var atTop = !carousel || carousel.scrollTop <= 1;
+      var atTop    = !carousel || carousel.scrollTop <= 1;
+      var atBottom = carousel && (carousel.scrollTop + carousel.clientHeight >= carousel.scrollHeight - 10);
       if (delta < 0 && atTop) {
         reverseAccum = Math.min(reverseAccum + Math.abs(delta), reverseThreshold + 100);
-        if (reverseAccum >= reverseThreshold) {
-          transitionToIntro();
-        }
-      } else if (delta > 0) {
+        if (reverseAccum >= reverseThreshold) transitionToIntro();
+      } else if (delta > 0 && atBottom) {
+        forwardAccum = Math.min(forwardAccum + delta, forwardThreshold + 100);
+        if (forwardAccum >= forwardThreshold) transitionToWhatIsE();
+      } else {
+        reverseAccum = 0;
+        if (!atBottom) forwardAccum = 0;
+      }
+    } else if (currentView === 'whatIsE') {
+      if (delta < 0) {
+        reverseAccum = Math.min(reverseAccum + Math.abs(delta), reverseThreshold + 100);
+        if (reverseAccum >= reverseThreshold) transitionToPortfolio();
+      } else {
         reverseAccum = 0;
       }
     }
@@ -306,21 +316,20 @@ function initIntroTransition() {
     var prevView = currentView;
 
     if (prevView === 'whatIsE') {
-      if (whatIsEPage) {
-        gsap.to(whatIsEPage, {
-          opacity: 0, duration: 0.5, ease: 'power2.inOut',
-          onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
-        });
-      }
+      if (_env) _env.stop();
       gsap.set(introPage, { yPercent: -100 });
       introPage.style.pointerEvents = 'none';
-      setTimeout(function() {
-        isTransitioning = false;
-        currentView = 'portfolio';
-        forwardAccum = 0; reverseAccum = 0;
-        updateNav();
-        activatePortfolio();
-      }, 520);
+      gsap.to(whatIsEPage, {
+        yPercent: 100, duration: 0.9, ease: 'power3.inOut',
+        onComplete: function() {
+          whatIsEPage.style.pointerEvents = 'none';
+          isTransitioning = false;
+          currentView = 'portfolio';
+          forwardAccum = 0; reverseAccum = 0;
+          updateNav();
+          activatePortfolio();
+        }
+      });
       return;
     }
 
@@ -364,12 +373,15 @@ function initIntroTransition() {
     });
 
     if (prevView === 'whatIsE' && whatIsEPage) {
-      tl.to(whatIsEPage, { opacity: 0, duration: 0.4, ease: 'power2.inOut',
-        onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
-      }, 0)
-        .to(introPage, { yPercent: 0, duration: 0.85, ease: 'power3.inOut' }, 0.15)
-        .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
-        .to(scrollIndicator, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+      if (_env) _env.stop();
+      // intro (z-51) slides down over whatIsE (z-49), then reset whatIsE
+      tl.to(introPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' }, 0)
+        .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.35')
+        .to(scrollIndicator, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3')
+        .call(function() {
+          gsap.set(whatIsEPage, { yPercent: 100 });
+          whatIsEPage.style.pointerEvents = 'none';
+        });
     } else {
       tl.to(introPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' })
         .to(introText, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
@@ -388,6 +400,7 @@ function initIntroTransition() {
       introPage.style.pointerEvents = 'none';
     }
 
+    gsap.set(whatIsEPage, { yPercent: 100 });
     if (whatIsEPage) whatIsEPage.style.pointerEvents = 'auto';
 
     var tl = gsap.timeline({
@@ -405,9 +418,10 @@ function initIntroTransition() {
       tl.to(introText, { y: -120, opacity: 0, duration: 0.5, ease: 'power3.inOut' }, 0)
         .to(scrollIndicator, { opacity: 0, duration: 0.2 }, 0)
         .to(introPage, { yPercent: -100, duration: 0.7, ease: 'power3.inOut' }, 0.1)
-        .to(whatIsEPage, { opacity: 1, duration: 0.65, ease: 'power2.inOut' }, 0.25);
+        .to(whatIsEPage, { yPercent: 0, duration: 0.85, ease: 'power3.inOut' }, 0.2);
     } else {
-      tl.to(whatIsEPage, { opacity: 1, duration: 0.6, ease: 'power2.inOut' }, 0);
+      // from portfolio — slide whatIsE up from below
+      tl.to(whatIsEPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' }, 0);
     }
   }
 
