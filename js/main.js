@@ -36,6 +36,11 @@ function activatePortfolio() {
     setTimeout(() => item.classList.add('visible'), 80 + i * 60);
   });
 
+  // Re-enable carousel item interactions
+  document.querySelectorAll('.center-carousel-item').forEach(function(item) {
+    item.style.pointerEvents = 'auto';
+  });
+
   setTimeout(calculateTimelineSpans, 600);
 }
 
@@ -45,6 +50,11 @@ function deactivatePortfolio() {
 
   document.querySelectorAll('.timeline-entry, .timeline-entry-mobile').forEach((item) => {
     item.classList.remove('visible');
+  });
+
+  // Explicitly disable carousel item interactions to prevent click-through
+  document.querySelectorAll('.center-carousel-item').forEach(function(item) {
+    item.style.pointerEvents = 'none';
   });
 
   const carousel = document.getElementById('center-carousel');
@@ -442,7 +452,7 @@ function initIntroTransition() {
 }
 
 /* ==========================================
-   What is E — Canvas 2D Node Diagram
+   What is E — SVG Node Diagram
    ========================================== */
 var _env = null;
 
@@ -450,203 +460,191 @@ function buildEnvDesignDiagram() {
   var page = document.getElementById('whatIsEPage');
   if (!page) return;
 
-  // Canvas
-  var canvas = document.createElement('canvas');
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;';
-  page.appendChild(canvas);
+  var W = window.innerWidth;
+  var H = window.innerHeight;
+  var FH = 10;
+  var FW = FH * (W / H);
 
-  // HTML label overlay
-  var labelCont = document.createElement('div');
-  labelCont.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;';
-  page.appendChild(labelCont);
+  function px(x) { return (x / FW + 0.5) * W; }
+  function py(y) { return (-y / FH + 0.5) * H; }
+  function pr(r) { return r * W / FW; }
 
-  var W = window.innerWidth, H = window.innerHeight;
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var FH = 10, FW = FH * (W / H);
-
-  // Canvas 2D context
-  canvas.width  = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
-  var ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  // World → pixel helpers
-  function toX(x) { return (x / FW + 0.5) * W; }
-  function toY(y) { return (-y / FH + 0.5) * H; }
-  function toR(r) { return r * W / FW; }
-
-  // Node definitions (world coords, FH=10 so y: –5 to +5)
   var nodes = [
-    { id:'env',      label:'Environment Design',             x:-4.5,  y: 0.1,  r:0.16, type:'center'                 },
-    { id:'set',      label:'Set design',                     x:-1.8,  y: 2.5,  r:0.09, type:'primary'                },
-    { id:'xr',       label:'XR design',                      x:-0.9,  y: 1.15, r:0.09, type:'primary'                },
-    { id:'interior', label:'Interior Design',                x: 0.0,  y:-0.35, r:0.09, type:'primary'                },
-    { id:'exp',      label:'Experiential Branding Design',   x:-1.4,  y:-2.1,  r:0.09, type:'primary'                },
-    { id:'set_ta',   label:'technical artist',               x: 1.0,  y: 3.5,  r:0.055,type:'secondary',parent:'set' },
-    { id:'set_3d',   label:'3D artist',                      x: 1.3,  y: 2.2,  r:0.055,type:'secondary',parent:'set' },
-    { id:'xr_ta',    label:'technical artist',               x: 2.0,  y: 2.0,  r:0.055,type:'secondary',parent:'xr'  },
-    { id:'xr_pd',    label:'product design',                 x: 2.3,  y: 1.0,  r:0.055,type:'secondary',parent:'xr'  },
-    { id:'xr_pdp',   label:'product design prototyper',      x: 1.9,  y:-0.1,  r:0.055,type:'secondary',parent:'xr'  },
-    { id:'exp_eg',   label:'Environmental graphic designer', x: 1.6,  y:-1.45, r:0.055,type:'secondary',parent:'exp' },
-    { id:'exp_ad',   label:'art director',                   x: 2.0,  y:-2.4,  r:0.055,type:'secondary',parent:'exp' },
-    { id:'exp_ct',   label:'creative technologist',          x: 1.6,  y:-3.4,  r:0.055,type:'secondary',parent:'exp' },
+    { id: 'env',      label: 'Environment Design',             x: -4.5, y:  0.10, r: 0.16,  type: 'center'    },
+    { id: 'set',      label: 'Set design',                     x: -1.8, y:  2.50, r: 0.09,  type: 'primary'   },
+    { id: 'xr',       label: 'XR design',                      x: -0.9, y:  1.15, r: 0.09,  type: 'primary'   },
+    { id: 'interior', label: 'Interior Design',                x:  0.0, y: -0.35, r: 0.09,  type: 'primary'   },
+    { id: 'exp',      label: 'Experiential Branding Design',   x: -1.4, y: -2.10, r: 0.09,  type: 'primary'   },
+    { id: 'set_ta',   label: 'technical artist',               x:  1.0, y:  3.50, r: 0.055, type: 'secondary' },
+    { id: 'set_3d',   label: '3D artist',                      x:  1.3, y:  2.20, r: 0.055, type: 'secondary' },
+    { id: 'xr_ta',    label: 'technical artist',               x:  2.0, y:  2.00, r: 0.055, type: 'secondary' },
+    { id: 'xr_pd',    label: 'product design',                 x:  2.3, y:  1.00, r: 0.055, type: 'secondary' },
+    { id: 'xr_pdp',   label: 'product design prototyper',      x:  1.9, y: -0.10, r: 0.055, type: 'secondary' },
+    { id: 'exp_eg',   label: 'Environmental graphic designer', x:  1.6, y: -1.45, r: 0.055, type: 'secondary' },
+    { id: 'exp_ad',   label: 'art director',                   x:  2.0, y: -2.40, r: 0.055, type: 'secondary' },
+    { id: 'exp_ct',   label: 'creative technologist',          x:  1.6, y: -3.40, r: 0.055, type: 'secondary' },
   ];
 
   var edges = [
-    {from:'env',to:'set'},{from:'env',to:'xr'},{from:'env',to:'interior'},{from:'env',to:'exp'},
-    {from:'set',to:'set_ta'},{from:'set',to:'set_3d'},
-    {from:'xr', to:'xr_ta'},{from:'xr', to:'xr_pd'},{from:'xr',to:'xr_pdp'},
-    {from:'exp',to:'exp_eg'},{from:'exp',to:'exp_ad'},{from:'exp',to:'exp_ct'},
+    { from: 'env', to: 'set'      },
+    { from: 'env', to: 'xr'       },
+    { from: 'env', to: 'interior' },
+    { from: 'env', to: 'exp'      },
+    { from: 'set', to: 'set_ta'   },
+    { from: 'set', to: 'set_3d'   },
+    { from: 'xr',  to: 'xr_ta'   },
+    { from: 'xr',  to: 'xr_pd'   },
+    { from: 'xr',  to: 'xr_pdp'  },
+    { from: 'exp', to: 'exp_eg'   },
+    { from: 'exp', to: 'exp_ad'   },
+    { from: 'exp', to: 'exp_ct'   },
   ];
 
   var nodeMap = {};
   nodes.forEach(function(n) {
     nodeMap[n.id] = n;
     n.connected = [];
-    n.baseY = n.y;
-    n.phase = Math.random() * Math.PI * 2;
-    n.opacity = 0;
-    n.targetOpacity = 0;
   });
   edges.forEach(function(e) {
     nodeMap[e.from].connected.push(e.to);
     nodeMap[e.to].connected.push(e.from);
     e.baseOpacity = (e.from === 'env') ? 0.22 : 0.14;
-    e.opacity = 0;
-    e.targetOpacity = 0;
   });
 
-  // HTML labels
+  var NS = 'http://www.w3.org/2000/svg';
+
+  // SVG element — pointer-events:none so the svg background doesn't block page scrolling
+  var svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
+  page.appendChild(svg);
+
+  // Edge lines
+  edges.forEach(function(e) {
+    var fn = nodeMap[e.from];
+    var tn = nodeMap[e.to];
+    var line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', px(fn.x).toFixed(1));
+    line.setAttribute('y1', py(fn.y).toFixed(1));
+    line.setAttribute('x2', px(tn.x).toFixed(1));
+    line.setAttribute('y2', py(tn.y).toFixed(1));
+    line.setAttribute('stroke', '#1a1a1a');
+    line.setAttribute('stroke-width', '0.75');
+    line.style.opacity = '0';
+    svg.appendChild(line);
+    e.el = line;
+  });
+
+  // Node circles
+  nodes.forEach(function(n) {
+    var circle = document.createElementNS(NS, 'circle');
+    circle.setAttribute('cx', px(n.x).toFixed(1));
+    circle.setAttribute('cy', py(n.y).toFixed(1));
+    circle.setAttribute('r',  pr(n.r).toFixed(1));
+    circle.setAttribute('fill', n.type === 'secondary' ? '#999999' : '#1a1a1a');
+    circle.style.opacity = '0';
+    svg.appendChild(circle);
+    n.circleEl = circle;
+  });
+
+  // HTML label overlay
+  var labelCont = document.createElement('div');
+  labelCont.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;';
+  page.appendChild(labelCont);
+
   nodes.forEach(function(n) {
     var div = document.createElement('div');
     div.className = 'env-label ' + n.type;
     div.textContent = n.label;
+    div.style.left = (px(n.x) + pr(n.r) + 7) + 'px';
+    div.style.top  = py(n.y) + 'px';
     div.style.opacity = '0';
     labelCont.appendChild(div);
     n.labelEl = div;
   });
 
-  // Mouse (screen pixels)
-  var mouse = { x: -9999, y: -9999 };
-  var hoveredId = null;
-
-  page.addEventListener('mousemove', function(e) {
-    var rect = canvas.getBoundingClientRect();
-    mouse.x = e.clientX - rect.left;
-    mouse.y = e.clientY - rect.top;
+  // Transparent hit circles for hover (children of svg with pointer-events:all
+  // still receive events even when parent svg has pointer-events:none)
+  nodes.forEach(function(n) {
+    var hit = document.createElementNS(NS, 'circle');
+    hit.setAttribute('cx', px(n.x).toFixed(1));
+    hit.setAttribute('cy', py(n.y).toFixed(1));
+    hit.setAttribute('r',  Math.max(pr(n.r) * 3.5, 16).toFixed(1));
+    hit.setAttribute('fill', 'transparent');
+    hit.style.pointerEvents = 'all';
+    svg.appendChild(hit);
+    hit.addEventListener('mouseenter', function() { applyHover(n.id); });
+    hit.addEventListener('mouseleave', function() { applyHover(null);  });
   });
-  page.addEventListener('mouseleave', function() { mouse.x = -9999; mouse.y = -9999; });
 
-  function getBobY(n) { return n.baseY + Math.sin(clock + n.phase) * 0.032; }
-
-  function findHovered() {
-    var best = null, bestD = Infinity;
-    nodes.forEach(function(n) {
-      var cx = toX(n.x), cy = toY(getBobY(n));
-      var dx = mouse.x - cx, dy = mouse.y - cy;
-      var d = Math.sqrt(dx * dx + dy * dy);
-      if (d < Math.max(toR(n.r) * 4, 14) && d < bestD) { best = n; bestD = d; }
-    });
-    return best ? best.id : null;
-  }
-
-  function applyHover(newId) {
-    if (newId === hoveredId) return;
-    hoveredId = newId;
-    if (newId) {
-      var h = nodeMap[newId], conn = {};
-      conn[newId] = true;
-      h.connected.forEach(function(id) { conn[id] = true; });
+  function applyHover(id) {
+    if (id) {
+      var conn = {};
+      conn[id] = true;
+      nodeMap[id].connected.forEach(function(cid) { conn[cid] = true; });
       nodes.forEach(function(n) {
-        n.targetOpacity = conn[n.id] ? 1 : 0.08;
-        n.labelEl.style.opacity = conn[n.id] ? '1' : '0.07';
-        n.labelEl.style.fontWeight = (n.id === newId) ? '600' : '';
-        n.labelEl.style.color     = (n.id === newId) ? '#000' : '';
+        gsap.to(n.circleEl, { opacity: conn[n.id] ? 1 : 0.08, duration: 0.2, overwrite: 'auto' });
+        gsap.to(n.labelEl,  { opacity: conn[n.id] ? 1 : 0.07, duration: 0.2, overwrite: 'auto' });
+        n.labelEl.style.fontWeight = (n.id === id) ? '500' : '';
       });
       edges.forEach(function(e) {
-        e.targetOpacity = (conn[e.from] && conn[e.to]) ? e.baseOpacity * 4 : 0.02;
+        var active = conn[e.from] && conn[e.to];
+        gsap.to(e.el, { opacity: active ? e.baseOpacity * 3.5 : 0.02, duration: 0.2, overwrite: 'auto' });
       });
     } else {
       nodes.forEach(function(n) {
-        n.targetOpacity = 1;
-        n.labelEl.style.opacity = '1';
+        gsap.to(n.circleEl, { opacity: 1, duration: 0.25, overwrite: 'auto' });
+        gsap.to(n.labelEl,  { opacity: 1, duration: 0.25, overwrite: 'auto' });
         n.labelEl.style.fontWeight = '';
-        n.labelEl.style.color = '';
       });
-      edges.forEach(function(e) { e.targetOpacity = e.baseOpacity; });
+      edges.forEach(function(e) {
+        gsap.to(e.el, { opacity: e.baseOpacity, duration: 0.25, overwrite: 'auto' });
+      });
     }
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-
-    // Edges
-    edges.forEach(function(e) {
-      var fn = nodeMap[e.from], tn = nodeMap[e.to];
-      ctx.beginPath();
-      ctx.moveTo(toX(fn.x), toY(getBobY(fn)));
-      ctx.lineTo(toX(tn.x), toY(getBobY(tn)));
-      ctx.strokeStyle = 'rgba(26,26,26,' + e.opacity.toFixed(3) + ')';
-      ctx.lineWidth = 0.75;
-      ctx.stroke();
-    });
-
-    // Nodes + update label positions
+  function resetAll() {
     nodes.forEach(function(n) {
-      var cx = toX(n.x), cy = toY(getBobY(n)), r = toR(n.r);
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      var rgb = n.type === 'secondary' ? '153,153,153' : '26,26,26';
-      ctx.fillStyle = 'rgba(' + rgb + ',' + n.opacity.toFixed(3) + ')';
-      ctx.fill();
-      n.labelEl.style.left = (cx + r + 7) + 'px';
-      n.labelEl.style.top  = cy + 'px';
+      gsap.killTweensOf(n.circleEl);
+      gsap.killTweensOf(n.labelEl);
+      gsap.set(n.circleEl, { opacity: 0 });
+      gsap.set(n.labelEl,  { opacity: 0 });
+      n.labelEl.style.fontWeight = '';
+    });
+    edges.forEach(function(e) {
+      gsap.killTweensOf(e.el);
+      gsap.set(e.el, { opacity: 0 });
     });
   }
-
-  var clock = 0, rafId = null, active = false;
-
-  function lerp(a, b, t) { return a + (b - a) * t; }
-
-  function tick() {
-    if (!active) return;
-    rafId = requestAnimationFrame(tick);
-    clock += 0.012;
-    // Smooth opacity interpolation
-    nodes.forEach(function(n) { n.opacity = lerp(n.opacity, n.targetOpacity, 0.09); });
-    edges.forEach(function(e) { e.opacity = lerp(e.opacity, e.targetOpacity, 0.09); });
-    applyHover(findHovered());
-    draw();
-  }
-
-  window.addEventListener('resize', function() {
-    W = window.innerWidth; H = window.innerHeight; FW = FH * (W / H);
-    canvas.width  = Math.round(W * dpr);
-    canvas.height = Math.round(H * dpr);
-    ctx.scale(dpr, dpr);
-  });
 
   function playEntrance() {
-    nodes.forEach(function(n) { n.opacity = 0; n.targetOpacity = 1; n.labelEl.style.opacity = '0'; });
-    edges.forEach(function(e) { e.opacity = 0; e.targetOpacity = e.baseOpacity; });
-    hoveredId = null;
-    // Stagger label fade-in via CSS transition
+    var tl = gsap.timeline();
+    edges.forEach(function(e, i) {
+      tl.fromTo(e.el,
+        { opacity: 0 },
+        { opacity: e.baseOpacity, duration: 0.5, ease: 'power2.out' },
+        i * 0.025
+      );
+    });
     nodes.forEach(function(n, i) {
-      (function(el, delay) {
-        setTimeout(function() { el.style.opacity = '1'; }, delay);
-      })(n.labelEl, 350 + i * 75);
+      tl.fromTo(n.circleEl,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.4, ease: 'power2.out' },
+        0.08 + i * 0.04
+      );
+      tl.fromTo(n.labelEl,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.4, ease: 'power2.out' },
+        0.2 + i * 0.06
+      );
     });
   }
 
   _env = {
-    start: function() { active = true; playEntrance(); tick(); },
-    stop:  function() {
-      active = false;
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-      nodes.forEach(function(n) { n.labelEl.style.opacity = '0'; });
-    }
+    start: function() { resetAll(); playEntrance(); },
+    stop:  function() { resetAll(); }
   };
-
 }
 
 function animateEnvDiagram() {
