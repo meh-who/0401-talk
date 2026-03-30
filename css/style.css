@@ -455,20 +455,6 @@ section {
   border-radius: 2px;
 }
 
-/* --- What is E Diagram Labels --- */
-.env-label {
-  position: absolute;
-  transform: translateY(-50%);
-  white-space: nowrap;
-  pointer-events: none;
-  font-family: 'Neue Montreal', Inter, system-ui, sans-serif;
-  transition: opacity 0.25s ease, color 0.2s ease;
-  line-height: 1;
-}
-.env-label.center   { font-size: clamp(9px, 0.76vw, 12px); font-weight: 500; color: #1a1a1a; letter-spacing: 0.02em; }
-.env-label.primary  { font-size: clamp(8px, 0.68vw, 11px); font-weight: 400; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.04em; }
-.env-label.secondary{ font-size: clamp(7px, 0.6vw, 10px);  font-weight: 300; color: #888; }
-
 /* --- Responsive Adjustments --- */
 @media (max-width: 767px) {
   body {
