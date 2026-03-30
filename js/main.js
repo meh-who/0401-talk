@@ -442,11 +442,12 @@ function initIntroTransition() {
 }
 
 /* ==========================================
-   What is E — Canvas 2D Node Diagram
+   What is E — Three.js Node Diagram
    ========================================== */
 var _env = null;
 
 function buildEnvDesignDiagram() {
+  if (typeof THREE === 'undefined') return;
   var page = document.getElementById('whatIsEPage');
   if (!page) return;
 
@@ -461,21 +462,18 @@ function buildEnvDesignDiagram() {
   page.appendChild(labelCont);
 
   var W = window.innerWidth, H = window.innerHeight;
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var FH = 10, FW = FH * (W / H);
+  var FH = 10;
+  var FW = FH * (W / H);
 
-  // Canvas 2D context
-  canvas.width  = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
-  var ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
+  var scene = new THREE.Scene();
+  var camera = new THREE.OrthographicCamera(-FW/2, FW/2, FH/2, -FH/2, 0.1, 100);
+  camera.position.z = 10;
 
-  // World → pixel helpers
-  function toX(x) { return (x / FW + 0.5) * W; }
-  function toY(y) { return (-y / FH + 0.5) * H; }
-  function toR(r) { return r * W / FW; }
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H, false);
 
-  // Node definitions (world coords, FH=10 so y: –5 to +5)
+  // Node positions: world coords (y: -5 to 5, x proportional to aspect)
   var nodes = [
     { id:'env',      label:'Environment Design',             x:-4.5,  y: 0.1,  r:0.16, type:'center'                 },
     { id:'set',      label:'Set design',                     x:-1.8,  y: 2.5,  r:0.09, type:'primary'                },
@@ -500,20 +498,31 @@ function buildEnvDesignDiagram() {
   ];
 
   var nodeMap = {};
+  nodes.forEach(function(n) { nodeMap[n.id] = n; n.connected = []; });
+  edges.forEach(function(e) { nodeMap[e.from].connected.push(e.to); nodeMap[e.to].connected.push(e.from); });
+
+  // Meshes
   nodes.forEach(function(n) {
-    nodeMap[n.id] = n;
-    n.connected = [];
+    var geo = new THREE.CircleGeometry(n.r, 40);
+    var mat = new THREE.MeshBasicMaterial({ color: n.type === 'secondary' ? 0x999999 : 0x1a1a1a, transparent: true, opacity: 0 });
+    var mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(n.x, n.y, 0);
+    scene.add(mesh);
+    n.mesh = mesh;
     n.baseY = n.y;
     n.phase = Math.random() * Math.PI * 2;
-    n.opacity = 0;
-    n.targetOpacity = 0;
   });
+
+  // Edges
   edges.forEach(function(e) {
-    nodeMap[e.from].connected.push(e.to);
-    nodeMap[e.to].connected.push(e.from);
-    e.baseOpacity = (e.from === 'env') ? 0.22 : 0.14;
-    e.opacity = 0;
-    e.targetOpacity = 0;
+    var fn = nodeMap[e.from], tn = nodeMap[e.to];
+    var geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(fn.x, fn.y, -0.1), new THREE.Vector3(tn.x, tn.y, -0.1)
+    ]);
+    var mat = new THREE.LineBasicMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0 });
+    scene.add(new THREE.Line(geo, mat));
+    e.mesh = scene.children[scene.children.length - 1];
+    e.baseOpacity = (e.from === 'env') ? 0.2 : 0.13;
   });
 
   // HTML labels
@@ -526,26 +535,24 @@ function buildEnvDesignDiagram() {
     n.labelEl = div;
   });
 
-  // Mouse (screen pixels)
-  var mouse = { x: -9999, y: -9999 };
+  // Mouse hover
+  var mouse = { x: -999, y: -999 };
   var hoveredId = null;
 
   page.addEventListener('mousemove', function(e) {
     var rect = canvas.getBoundingClientRect();
-    mouse.x = e.clientX - rect.left;
-    mouse.y = e.clientY - rect.top;
+    mouse.x = ((e.clientX - rect.left) / rect.width)  *  2 - 1;
+    mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
   });
-  page.addEventListener('mouseleave', function() { mouse.x = -9999; mouse.y = -9999; });
-
-  function getBobY(n) { return n.baseY + Math.sin(clock + n.phase) * 0.032; }
+  page.addEventListener('mouseleave', function() { mouse.x = -999; mouse.y = -999; });
 
   function findHovered() {
+    var wx = mouse.x * camera.right, wy = mouse.y * camera.top;
     var best = null, bestD = Infinity;
     nodes.forEach(function(n) {
-      var cx = toX(n.x), cy = toY(getBobY(n));
-      var dx = mouse.x - cx, dy = mouse.y - cy;
-      var d = Math.sqrt(dx * dx + dy * dy);
-      if (d < Math.max(toR(n.r) * 4, 14) && d < bestD) { best = n; bestD = d; }
+      var dx = wx - n.mesh.position.x, dy = wy - n.mesh.position.y;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if (d < Math.max(n.r * 5, 0.22) && d < bestD) { best = n; bestD = d; }
     });
     return best ? best.id : null;
   }
@@ -558,83 +565,69 @@ function buildEnvDesignDiagram() {
       conn[newId] = true;
       h.connected.forEach(function(id) { conn[id] = true; });
       nodes.forEach(function(n) {
-        n.targetOpacity = conn[n.id] ? 1 : 0.08;
-        n.labelEl.style.opacity = conn[n.id] ? '1' : '0.07';
+        var active = !!conn[n.id];
+        gsap.to(n.mesh.material, { opacity: active ? 1 : 0.08, duration: 0.2 });
+        n.labelEl.style.opacity = active ? '1' : '0.07';
         n.labelEl.style.fontWeight = (n.id === newId) ? '600' : '';
         n.labelEl.style.color     = (n.id === newId) ? '#000' : '';
       });
       edges.forEach(function(e) {
-        e.targetOpacity = (conn[e.from] && conn[e.to]) ? e.baseOpacity * 4 : 0.02;
+        gsap.to(e.mesh.material, { opacity: (!!conn[e.from] && !!conn[e.to]) ? e.baseOpacity * 4 : 0.02, duration: 0.2 });
       });
     } else {
       nodes.forEach(function(n) {
-        n.targetOpacity = 1;
+        gsap.to(n.mesh.material, { opacity: 1, duration: 0.3 });
         n.labelEl.style.opacity = '1';
         n.labelEl.style.fontWeight = '';
         n.labelEl.style.color = '';
       });
-      edges.forEach(function(e) { e.targetOpacity = e.baseOpacity; });
+      edges.forEach(function(e) { gsap.to(e.mesh.material, { opacity: e.baseOpacity, duration: 0.3 }); });
     }
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-
-    // Edges
-    edges.forEach(function(e) {
-      var fn = nodeMap[e.from], tn = nodeMap[e.to];
-      ctx.beginPath();
-      ctx.moveTo(toX(fn.x), toY(getBobY(fn)));
-      ctx.lineTo(toX(tn.x), toY(getBobY(tn)));
-      ctx.strokeStyle = 'rgba(26,26,26,' + e.opacity.toFixed(3) + ')';
-      ctx.lineWidth = 0.75;
-      ctx.stroke();
-    });
-
-    // Nodes + update label positions
+  function updateLabels() {
     nodes.forEach(function(n) {
-      var cx = toX(n.x), cy = toY(getBobY(n)), r = toR(n.r);
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      var rgb = n.type === 'secondary' ? '153,153,153' : '26,26,26';
-      ctx.fillStyle = 'rgba(' + rgb + ',' + n.opacity.toFixed(3) + ')';
-      ctx.fill();
-      n.labelEl.style.left = (cx + r + 7) + 'px';
-      n.labelEl.style.top  = cy + 'px';
+      var pos = n.mesh.position.clone().project(camera);
+      n.labelEl.style.left = ((pos.x * 0.5 + 0.5) * W + n.r * W / FW + 7) + 'px';
+      n.labelEl.style.top  = ((-pos.y * 0.5 + 0.5) * H) + 'px';
     });
   }
 
   var clock = 0, rafId = null, active = false;
 
-  function lerp(a, b, t) { return a + (b - a) * t; }
-
   function tick() {
     if (!active) return;
     rafId = requestAnimationFrame(tick);
     clock += 0.012;
-    // Smooth opacity interpolation
-    nodes.forEach(function(n) { n.opacity = lerp(n.opacity, n.targetOpacity, 0.09); });
-    edges.forEach(function(e) { e.opacity = lerp(e.opacity, e.targetOpacity, 0.09); });
+    nodes.forEach(function(n) { n.mesh.position.y = n.baseY + Math.sin(clock + n.phase) * 0.032; });
+    edges.forEach(function(e) {
+      var fn = nodeMap[e.from], tn = nodeMap[e.to];
+      var arr = e.mesh.geometry.attributes.position.array;
+      arr[0] = fn.mesh.position.x; arr[1] = fn.mesh.position.y;
+      arr[3] = tn.mesh.position.x; arr[4] = tn.mesh.position.y;
+      e.mesh.geometry.attributes.position.needsUpdate = true;
+    });
     applyHover(findHovered());
-    draw();
+    updateLabels();
+    renderer.render(scene, camera);
   }
 
   window.addEventListener('resize', function() {
     W = window.innerWidth; H = window.innerHeight; FW = FH * (W / H);
-    canvas.width  = Math.round(W * dpr);
-    canvas.height = Math.round(H * dpr);
-    ctx.scale(dpr, dpr);
+    camera.left = -FW/2; camera.right = FW/2; camera.updateProjectionMatrix();
+    renderer.setSize(W, H, false);
   });
 
   function playEntrance() {
-    nodes.forEach(function(n) { n.opacity = 0; n.targetOpacity = 1; n.labelEl.style.opacity = '0'; });
-    edges.forEach(function(e) { e.opacity = 0; e.targetOpacity = e.baseOpacity; });
+    nodes.forEach(function(n) { gsap.set(n.mesh.material, { opacity: 0 }); n.labelEl.style.opacity = '0'; });
+    edges.forEach(function(e) { gsap.set(e.mesh.material, { opacity: 0 }); });
     hoveredId = null;
-    // Stagger label fade-in via CSS transition
+    edges.forEach(function(e, i) {
+      gsap.to(e.mesh.material, { opacity: e.baseOpacity, duration: 0.9, delay: 0.05 + i * 0.07, ease: 'power2.out' });
+    });
     nodes.forEach(function(n, i) {
-      (function(el, delay) {
-        setTimeout(function() { el.style.opacity = '1'; }, delay);
-      })(n.labelEl, 350 + i * 75);
+      gsap.to(n.mesh.material, { opacity: 1, duration: 0.55, delay: 0.15 + i * 0.08, ease: 'power2.out' });
+      (function(el, d) { setTimeout(function() { el.style.opacity = '1'; }, d * 1000); })(n.labelEl, 0.3 + i * 0.08);
     });
   }
 
