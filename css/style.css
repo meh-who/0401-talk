@@ -164,7 +164,7 @@ img, video { max-width: 100%; height: auto; display: block; }
 }
 
 /* --- Intro Page --- */
-#introPage {
+#introPage, #whyEPage {
   will-change: transform;
 }
 
@@ -341,16 +341,16 @@ img, video { max-width: 100%; height: auto; display: block; }
 }
 
 /* --- Navigation --- */
-#navIntro, #navJourney, #navWhatIsE {
+#navIntro, #navWhyE, #navJourney, #navWhatIsE, #navMindsets {
   opacity: 0.35;
   transition: opacity 0.3s ease;
 }
 
-#navIntro:hover, #navJourney:hover, #navWhatIsE:hover {
+#navIntro:hover, #navWhyE:hover, #navJourney:hover, #navWhatIsE:hover, #navMindsets:hover {
   opacity: 0.6;
 }
 
-#navIntro.nav-active, #navJourney.nav-active, #navWhatIsE.nav-active {
+#navIntro.nav-active, #navWhyE.nav-active, #navJourney.nav-active, #navWhatIsE.nav-active, #navMindsets.nav-active {
   opacity: 1;
 }
 
@@ -453,6 +453,29 @@ section {
   max-height: 85vh;
   object-fit: contain;
   border-radius: 2px;
+}
+
+/* --- Why I Chose E Mood Board --- */
+.why-e-item {
+  pointer-events: auto;
+  display: block;
+  transition: box-shadow 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.why-e-item.dragging {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+  transition: none;
+}
+
+/* --- Env Design Info Overlay --- */
+#envInfoClose:hover {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+#envInfoCard {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* --- Responsive Adjustments --- */

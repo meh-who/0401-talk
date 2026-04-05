@@ -22,9 +22,78 @@
 </head>
 <body class="antialiased margin-x-1 bg-black font-sans select-none">
 
-  <!-- What is E Page -->
+  <!-- The E Mindset Page -->
+  <div id="mindsetsPage" class="fixed inset-0 z-[48]" style="background: #ffffff; opacity: 0; pointer-events: none;">
+    <div class="h-full flex items-center padding-1">
+      <div class="span-ml-2">
+        <h2 id="mindsetsTitle" class="text-black opacity-0" style="font-size: clamp(20px, 2.4vw, 36px); font-weight: 500; letter-spacing: -0.01em; margin-bottom: 40px;">The E Mindset</h2>
+        <div id="mindsetsContent" class="span-w-5 opacity-0">
+          <div class="flex flex-col gap-8">
+            <div>
+              <span class="text-[11px] uppercase tracking-wider text-black/25 font-medium">01</span>
+              <h3 class="text-black font-medium mt-1" style="font-size: clamp(14px, 1.2vw, 18px);">Cross-Disciplinary Thinking</h3>
+              <p class="text-black/50 mt-2 leading-relaxed" style="font-size: clamp(12px, 1vw, 15px);">Learn to speak multiple design languages — spatial, digital, experiential — and actively experiment across their boundaries. The most interesting work in E happens at the intersections that haven't been named yet.</p>
+            </div>
+            <div>
+              <span class="text-[11px] uppercase tracking-wider text-black/25 font-medium">02</span>
+              <h3 class="text-black font-medium mt-1" style="font-size: clamp(14px, 1.2vw, 18px);">Build Domain Knowledge Depth</h3>
+              <p class="text-black/50 mt-2 leading-relaxed" style="font-size: clamp(12px, 1vw, 15px);">The E track gives you breadth — but breadth alone won't make you indispensable. Take the initiative to go deep in specific domains outside of design classes, developing the kind of expertise that turns a generalist into someone teams can't work without.</p>
+            </div>
+            <div>
+              <span class="text-[11px] uppercase tracking-wider text-black/25 font-medium">03</span>
+              <h3 class="text-black font-medium mt-1" style="font-size: clamp(14px, 1.2vw, 18px);">Prototype with Craft</h3>
+              <p class="text-black/50 mt-2 leading-relaxed" style="font-size: clamp(12px, 1vw, 15px);">Working across unfamiliar mediums and tools will always involve uncertainty — but that's never an excuse to lower the bar. A well-crafted small-scale prototype communicates more than a unpolished full-scale experience ever could.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diverging Career Paths Page -->
   <div id="whatIsEPage" class="fixed inset-0 z-[49]" style="background: #ffffff; opacity: 0; pointer-events: none;">
     <svg id="envDesignSvg" style="position: absolute; inset: 0; width: 100%; height: 100%;"></svg>
+    <div id="envInfoOverlay" class="absolute inset-0 flex items-center justify-center" style="opacity: 0; pointer-events: none;">
+      <div id="envInfoBg" class="absolute inset-0" style="background: rgba(255,255,255,0.45); backdrop-filter: blur(3px);"></div>
+      <div id="envInfoCard" class="relative" style="pointer-events: none; background: #fff; border: 1px solid rgba(0,0,0,0.08); max-width: 360px; width: 85vw; box-shadow: 0 4px 24px rgba(0,0,0,0.06); overflow: hidden;">
+        <button id="envInfoClose" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.85); border: none; cursor: pointer; color: rgba(0,0,0,0.4); transition: color 0.2s; z-index: 1; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="1" y1="1" x2="9" y2="9"></line>
+            <line x1="9" y1="1" x2="1" y2="9"></line>
+          </svg>
+        </button>
+        <img id="envInfoImg" src="" alt="" style="width: 100%; height: 150px; object-fit: cover; display: block;" />
+        <div style="padding: 22px 28px 28px;">
+          <h3 id="envInfoTitle" style="font-size: 11px; text-transform: uppercase; font-weight: 500; letter-spacing: 0.08em; margin-bottom: 12px; color: #1a1a1a;"></h3>
+          <p id="envInfoDesc" style="font-size: 13px; line-height: 1.7; color: rgba(0,0,0,0.55); margin-bottom: 16px;"></p>
+          <div>
+            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(0,0,0,0.28); font-weight: 500;">Tools</span>
+            <p id="envInfoTools" style="font-size: 12px; color: rgba(0,0,0,0.45); margin-top: 6px; line-height: 1.6;"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why I Chose E Page -->
+  <div id="whyEPage" class="fixed inset-0 z-[50] bg-white">
+    <div class="h-full flex items-center padding-1">
+      <div class="span-ml-2">
+        <h2 id="whyETitle" class="span-w-3 text-black opacity-0" style="font-size: clamp(24px, 3vw, 42px); font-weight: 500; letter-spacing: -0.01em;">Why I Chose E</h2>
+      </div>
+    </div>
+    <div id="whyEImages" class="absolute inset-0 opacity-0 max-md:hidden overflow-hidden" style="pointer-events: none;">
+      <img src="assets/why-e.jpg" class="why-e-item" style="position: absolute; top: 24vh; left: 48vw; width: 20vw; transform: rotate(-4deg); box-shadow: 0 3px 16px rgba(0,0,0,0.1);" />
+      <img src="assets/why-e.gif" class="why-e-item" style="position: absolute; top: 19vh; left: 70vw; width: 14vw; transform: rotate(3deg); box-shadow: 0 3px 16px rgba(0,0,0,0.1);" />
+      <img src="assets/why-e-2.webp" class="why-e-item" style="position: absolute; top: 50vh; left: 56vw; width: 12vw; transform: rotate(-2deg); box-shadow: 0 3px 16px rgba(0,0,0,0.1);" />
+      <video src="assets/why-e-3.mp4" class="why-e-item" style="position: absolute; top: 38vh; left: 71vw; width: 20vw; transform: rotate(2deg); box-shadow: 0 3px 16px rgba(0,0,0,0.1);" muted loop playsinline></video>
+    </div>
+    <div id="whyEScroll" class="absolute bottom-[5vh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-0">
+      <span class="text-[10px] uppercase tracking-[0.2em] text-black/30 font-medium">Scroll</span>
+      <div class="w-[1px] h-[20px] bg-black/10 overflow-hidden relative">
+        <div class="absolute inset-0 bg-black/40" style="animation: scrollDown 1.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Intro Page -->
@@ -32,7 +101,7 @@
     <div class="h-full flex items-center padding-1">
       <div class="span-ml-2">
         <p id="introText" class="span-w-5 text-black leading-[200%] opacity-0" style="font-size: clamp(13px, 1.4vw, 19px);">
-          Hi I'm Meijie! I am a Product Designer @ Meta Reality Labs for Ray-Ban Meta Display glasses. Rare fluency across hardware, software, platform design, and HCI research — shipping production work at the frontier of human–computer interaction.
+          I'm Meijie. I design and prototype emerging technology in XR and AI. Currently designing Core UX for Meta Rayban Display glasses at Meta Reality Labs.
         </p>
       </div>
     </div>
@@ -53,8 +122,10 @@
       <nav aria-label="Main navigation">
         <ul class="flex gutter-gap-1">
           <li id="navIntro" class="cursor-pointer hover:opacity-50 transition-opacity duration-200 nav-active">Intro</li>
+          <li id="navWhyE" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">Why I Chose E</li>
           <li id="navJourney" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">My Journey</li>
-          <li id="navWhatIsE" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">What is E</li>
+          <li id="navWhatIsE" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">Diverging Career Paths</li>
+          <li id="navMindsets" class="cursor-pointer hover:opacity-50 transition-opacity duration-200">The E Mindset</li>
         </ul>
       </nav>
     </div>
@@ -87,29 +158,32 @@
         <!-- Center Vertical Image Carousel -->
         <div id="center-carousel" class="absolute top-0 h-screen z-[47] overflow-y-auto max-md:hidden" style="width: 42vw; left: 50%; transform: translateX(-28%);">
           <div id="center-carousel-track" class="flex flex-col gap-[4vh] items-start" style="will-change: transform;">
+            <img src="assets/CMU-3.png" alt="CMU" class="center-carousel-item" data-index="2" style="width: 90%;" draggable="false" />
             <img src="assets/CMU-1.png" alt="CMU" class="center-carousel-item" data-index="0" style="width: 90%;" draggable="false" />
-            <video src="assets/CMU-2.mov" class="center-carousel-item" data-index="1" style="width: 90%;" muted loop playsinline></video>
-            <video src="assets/Ogilvy.mp4" class="center-carousel-item" data-index="2" style="width: 78%;" muted loop playsinline></video>
-            <video src="assets/Punchcut-1.mp4" class="center-carousel-item" data-index="3" style="width: 84%;" muted loop playsinline></video>
-            <img src="assets/ITP-1.gif" alt="ITP" class="center-carousel-item" data-index="4" style="width: 82%;" draggable="false" />
-            <img src="assets/ITP-2.gif" alt="ITP" class="center-carousel-item" data-index="5" style="width: 82%;" draggable="false" />
-            <img src="assets/Meta-Horizon.png" alt="Meta Horizon" class="center-carousel-item" data-index="6" style="width: 72%;" draggable="false" />
-            <video src="assets/LucidRealityLabs.mp4" class="center-carousel-item" data-index="7" style="width: 88%;" muted loop playsinline></video>
-            <video src="assets/LucidRealityLabs-2.mov" class="center-carousel-item" data-index="8" style="width: 88%;" muted loop playsinline></video>
-            <img src="assets/LucidRealityLabs-3.png" alt="Lucid Reality Labs" class="center-carousel-item" data-index="9" style="width: 88%;" draggable="false" />
-            <img src="assets/Meta-Wearable.png" alt="Meta Wearable" class="center-carousel-item" data-index="10" style="width: 80%;" draggable="false" />
+            <video src="assets/CMU-2.mp4" class="center-carousel-item" data-index="1" style="width: 90%;" muted loop playsinline></video>
+            <video src="assets/Ogilvy.mp4" class="center-carousel-item" data-index="3" style="width: 78%;" muted loop playsinline></video>
+            <video src="assets/Punchcut-1.mp4" class="center-carousel-item" data-index="4" style="width: 84%;" muted loop playsinline></video>
+            <img src="assets/ITP-3.gif" alt="ITP" class="center-carousel-item" data-index="5" style="width: 82%;" draggable="false" />
+            <img src="assets/ITP-4.gif" alt="ITP" class="center-carousel-item" data-index="5" style="width: 82%;" draggable="false" />
+            <img src="assets/ITP-1.gif" alt="ITP" class="center-carousel-item" data-index="5" style="width: 82%;" draggable="false" />
+            <img src="assets/ITP-2.gif" alt="ITP" class="center-carousel-item" data-index="6" style="width: 82%;" draggable="false" />
+            <img src="assets/Meta-Horizon.png" alt="Meta Horizon" class="center-carousel-item" data-index="7" style="width: 72%;" draggable="false" />
+            <video src="assets/LucidRealityLabs.mp4" class="center-carousel-item" data-index="8" style="width: 88%;" muted loop playsinline></video>
+            <video src="assets/LucidRealityLabs-2.mov" class="center-carousel-item" data-index="9" style="width: 88%;" muted loop playsinline></video>
+            <img src="assets/LucidRealityLabs-3.png" alt="Lucid Reality Labs" class="center-carousel-item" data-index="10" style="width: 88%;" draggable="false" />
+            <img src="assets/Meta-Wearable.png" alt="Meta Wearable" class="center-carousel-item" data-index="11" style="width: 80%;" draggable="false" />
           </div>
         </div>
 
         <!-- Timeline -->
         <div id="timeline" class="relative flex flex-col justify-between h-full py-[12vh] max-md:hidden" style="width: 36vw; padding-left: 1.5vw;">
 
-          <div class="timeline-entry multi-year text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="0,1" data-span-to="3">
+          <div class="timeline-entry multi-year text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="0,1,2" data-span-to="3">
             <span class="timeline-year">2017—2021</span>
             <span class="timeline-title">CMU</span>
           </div>
 
-          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="2">
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="3">
             <span class="timeline-year">2018</span>
             <div class="timeline-content">
               <span class="timeline-title">Ogilvy</span>
@@ -117,7 +191,7 @@
             </div>
           </div>
 
-          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="3">
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="4">
             <span class="timeline-year">2021</span>
             <div class="timeline-content">
               <span class="timeline-title">Punchcut</span>
@@ -125,12 +199,12 @@
             </div>
           </div>
 
-          <div class="timeline-entry multi-year text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="4,5" data-span-to="5">
+          <div class="timeline-entry multi-year text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="5,6" data-span-to="5">
             <span class="timeline-year">2021—2023</span>
             <span class="timeline-title">ITP</span>
           </div>
 
-          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="6">
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="7">
             <span class="timeline-year">2022</span>
             <div class="timeline-content">
               <span class="timeline-title">Meta RL</span>
@@ -138,7 +212,7 @@
             </div>
           </div>
 
-          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="7,8,9">
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="8,9,10">
             <span class="timeline-year">2023</span>
             <div class="timeline-content">
               <span class="timeline-title">Lucid Reality Labs</span>
@@ -154,7 +228,7 @@
             </div>
           </div>
 
-          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="10">
+          <div class="timeline-entry text-[11px] uppercase font-medium flex items-start gutter-gap-1 cursor-pointer opacity-0" data-images="11">
             <span class="timeline-year">Now</span>
             <div class="timeline-content">
               <span class="timeline-title">Meta RL</span>
@@ -237,6 +311,6 @@
     <div id="mediaOverlayContent" class="relative z-10 max-w-[85vw] max-h-[85vh]"></div>
   </div>
 
-  <script src="js/main.js"></script>
+  <script src="js/main.js?v=2"></script>
 </body>
 </html>

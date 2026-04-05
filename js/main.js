@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initIntroTransition();
   initTimelineSpans();
   buildEnvDesignDiagram();
+  initWhyEDrag();
 });
 
 /* ==========================================
@@ -237,21 +238,35 @@ function initTimelineSpans() {
    ========================================== */
 function initIntroTransition() {
   var introPage = document.getElementById('introPage');
+  var whyEPage = document.getElementById('whyEPage');
   var whatIsEPage = document.getElementById('whatIsEPage');
+  var mindsetsPage = document.getElementById('mindsetsPage');
   var introText = document.getElementById('introText');
   var scrollIndicator = document.getElementById('scrollIndicator');
+  var whyETitle = document.getElementById('whyETitle');
+  var whyEImages = document.getElementById('whyEImages');
+  var whyEScroll = document.getElementById('whyEScroll');
   var carousel = document.getElementById('center-carousel');
   var navIntro = document.getElementById('navIntro');
+  var navWhyE = document.getElementById('navWhyE');
   var navJourney = document.getElementById('navJourney');
   var navWhatIsE = document.getElementById('navWhatIsE');
+  var navMindsets = document.getElementById('navMindsets');
   if (!introPage) return;
 
   var forwardAccum = 0;
   var reverseAccum = 0;
+  var forwardAccumE = 0;
+  var reverseAccumE = 0;
   var forwardThreshold = 250;
   var reverseThreshold = 200;
   var isTransitioning = false;
   var currentView = 'intro';
+
+  function resetAccums() {
+    forwardAccum = 0; reverseAccum = 0;
+    forwardAccumE = 0; reverseAccumE = 0;
+  }
 
   setTimeout(function() {
     gsap.fromTo(introText,
@@ -263,12 +278,14 @@ function initIntroTransition() {
 
   function updateNav() {
     if (navIntro) navIntro.classList.toggle('nav-active', currentView === 'intro');
+    if (navWhyE) navWhyE.classList.toggle('nav-active', currentView === 'whyE');
     if (navJourney) navJourney.classList.toggle('nav-active', currentView === 'portfolio');
     if (navWhatIsE) navWhatIsE.classList.toggle('nav-active', currentView === 'whatIsE');
+    if (navMindsets) navMindsets.classList.toggle('nav-active', currentView === 'mindsets');
   }
 
   function handleScroll(delta) {
-    if (isTransitioning || currentView === 'whatIsE') return;
+    if (isTransitioning) return;
 
     if (currentView === 'intro') {
       if (delta > 0) {
@@ -278,7 +295,7 @@ function initIntroTransition() {
         introText.style.opacity = String(1 - progress * 0.6);
         scrollIndicator.style.opacity = String(Math.max(0, 1 - progress * 3));
         if (forwardAccum >= forwardThreshold) {
-          transitionToPortfolio();
+          transitionToWhyE();
         }
       } else {
         forwardAccum = Math.max(0, forwardAccum + delta);
@@ -287,16 +304,138 @@ function initIntroTransition() {
         introText.style.opacity = String(1 - progress * 0.6);
         scrollIndicator.style.opacity = String(Math.max(0, 1 - progress * 3));
       }
-    } else if (currentView === 'portfolio') {
-      var atTop = !carousel || carousel.scrollTop <= 1;
-      if (delta < 0 && atTop) {
+    } else if (currentView === 'whyE') {
+      if (delta > 0) {
+        reverseAccum = 0;
+        forwardAccum = Math.min(forwardAccum + delta, forwardThreshold + 100);
+        if (forwardAccum >= forwardThreshold) {
+          transitionToPortfolio();
+        }
+      } else if (delta < 0) {
+        forwardAccum = 0;
         reverseAccum = Math.min(reverseAccum + Math.abs(delta), reverseThreshold + 100);
         if (reverseAccum >= reverseThreshold) {
           transitionToIntro();
         }
-      } else if (delta > 0) {
-        reverseAccum = 0;
       }
+    } else if (currentView === 'portfolio') {
+      var atTop = !carousel || carousel.scrollTop <= 1;
+      var atBottom = !carousel || (carousel.scrollTop + carousel.clientHeight >= carousel.scrollHeight - 2);
+      if (delta < 0 && atTop) {
+        forwardAccumE = 0;
+        reverseAccum = Math.min(reverseAccum + Math.abs(delta), reverseThreshold + 100);
+        if (reverseAccum >= reverseThreshold) {
+          transitionToWhyE();
+        }
+      } else if (delta > 0 && atBottom) {
+        reverseAccum = 0;
+        forwardAccumE = Math.min(forwardAccumE + delta, forwardThreshold + 100);
+        if (forwardAccumE >= forwardThreshold) {
+          transitionToWhatIsE();
+        }
+      } else {
+        reverseAccum = 0;
+        forwardAccumE = 0;
+      }
+    } else if (currentView === 'whatIsE') {
+      if (delta < 0) {
+        forwardAccumE = 0;
+        reverseAccumE = Math.min(reverseAccumE + Math.abs(delta), reverseThreshold + 100);
+        if (reverseAccumE >= reverseThreshold) {
+          transitionToPortfolio();
+        }
+      } else if (delta > 0) {
+        reverseAccumE = 0;
+        forwardAccumE = Math.min(forwardAccumE + delta, forwardThreshold + 100);
+        if (forwardAccumE >= forwardThreshold) {
+          transitionToMindsets();
+        }
+      }
+    } else if (currentView === 'mindsets') {
+      if (delta < 0) {
+        reverseAccumE = Math.min(reverseAccumE + Math.abs(delta), reverseThreshold + 100);
+        if (reverseAccumE >= reverseThreshold) {
+          transitionToWhatIsE();
+        }
+      } else {
+        reverseAccumE = 0;
+      }
+    }
+  }
+
+  function hideMindsetsPage() {
+    if (mindsetsPage) { gsap.set(mindsetsPage, { opacity: 0 }); mindsetsPage.style.pointerEvents = 'none'; }
+  }
+
+  function transitionToWhyE() {
+    if (isTransitioning || currentView === 'whyE') return;
+    isTransitioning = true;
+    var prevView = currentView;
+
+    hideMindsetsPage();
+    if (prevView === 'portfolio') deactivatePortfolio();
+    if (prevView === 'whatIsE' && whatIsEPage) {
+      gsap.to(whatIsEPage, { opacity: 0, duration: 0.4, ease: 'power2.inOut',
+        onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
+      });
+    }
+
+    whyEPage.style.pointerEvents = 'auto';
+
+    function playWhyEVideo() {
+      var v = whyEImages ? whyEImages.querySelector('video') : null;
+      if (v) v.play().catch(function() {});
+    }
+    function pauseWhyEVideo() {
+      var v = whyEImages ? whyEImages.querySelector('video') : null;
+      if (v) v.pause();
+    }
+
+    if (prevView === 'intro') {
+      gsap.set(whyEPage, { yPercent: 0 });
+      gsap.set(whyETitle, { y: 20, opacity: 0 });
+      if (whyEImages) gsap.set(whyEImages, { opacity: 0 });
+      gsap.set(whyEScroll, { opacity: 0 });
+
+      var tl = gsap.timeline({
+        onComplete: function() {
+          isTransitioning = false;
+          currentView = 'whyE';
+          resetAccums();
+          introPage.style.pointerEvents = 'none';
+          updateNav();
+          playWhyEVideo();
+        }
+      });
+
+      tl.to(introText, { y: -120, opacity: 0, duration: 0.7, ease: 'power3.inOut' })
+        .to(scrollIndicator, { opacity: 0, duration: 0.2 }, '<')
+        .to(introPage, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.3')
+        .to(whyETitle, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+        .to(whyEImages, { opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.5')
+        .to(whyEScroll, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
+    } else {
+      gsap.set(introPage, { yPercent: -100 });
+      introPage.style.pointerEvents = 'none';
+      gsap.set(whyEPage, { yPercent: -100 });
+      gsap.set(whyETitle, { y: 40, opacity: 0 });
+      if (whyEImages) gsap.set(whyEImages, { opacity: 0 });
+      gsap.set(whyEScroll, { opacity: 0 });
+
+      var tl = gsap.timeline({
+        onComplete: function() {
+          isTransitioning = false;
+          currentView = 'whyE';
+          resetAccums();
+          updateNav();
+          playWhyEVideo();
+        }
+      });
+
+      tl.to(whyEPage, { yPercent: 0, duration: 0.9, ease: 'power3.inOut' })
+        .to(whyETitle, { y: 0, opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.3')
+        .to(whyEImages, { opacity: 1, duration: 0.7, ease: 'power2.out' }, '-=0.5')
+        .to(whyEScroll, { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.3');
     }
   }
 
@@ -304,6 +443,8 @@ function initIntroTransition() {
     if (isTransitioning || currentView === 'portfolio') return;
     isTransitioning = true;
     var prevView = currentView;
+
+    hideMindsetsPage();
 
     if (prevView === 'whatIsE') {
       if (whatIsEPage) {
@@ -313,23 +454,46 @@ function initIntroTransition() {
         });
       }
       gsap.set(introPage, { yPercent: -100 });
+      gsap.set(whyEPage, { yPercent: -100 });
       introPage.style.pointerEvents = 'none';
+      whyEPage.style.pointerEvents = 'none';
       setTimeout(function() {
         isTransitioning = false;
         currentView = 'portfolio';
-        forwardAccum = 0; reverseAccum = 0;
+        resetAccums();
         updateNav();
         activatePortfolio();
       }, 520);
       return;
     }
 
+    if (prevView === 'whyE') {
+      var tl = gsap.timeline({
+        onComplete: function() {
+          isTransitioning = false;
+          currentView = 'portfolio';
+          resetAccums();
+          whyEPage.style.pointerEvents = 'none';
+          updateNav();
+          activatePortfolio();
+        }
+      });
+
+      tl.to(whyETitle, { y: -120, opacity: 0, duration: 0.5, ease: 'power3.inOut' })
+        .to(whyEImages, { opacity: 0, duration: 0.3 }, '<')
+        .to(whyEScroll, { opacity: 0, duration: 0.2 }, '<')
+        .to(whyEPage, { yPercent: -100, duration: 0.9, ease: 'power3.inOut' }, '-=0.3');
+      return;
+    }
+
+    gsap.set(whyEPage, { yPercent: -100 });
+    whyEPage.style.pointerEvents = 'none';
+
     var tl = gsap.timeline({
       onComplete: function() {
         isTransitioning = false;
         currentView = 'portfolio';
-        forwardAccum = 0;
-        reverseAccum = 0;
+        resetAccums();
         introPage.style.pointerEvents = 'none';
         updateNav();
         activatePortfolio();
@@ -346,19 +510,20 @@ function initIntroTransition() {
     isTransitioning = true;
     var prevView = currentView;
 
+    hideMindsetsPage();
     if (prevView === 'portfolio') deactivatePortfolio();
 
     introPage.style.pointerEvents = '';
     gsap.set(introPage, { yPercent: -100 });
     gsap.set(introText, { y: 40, opacity: 0 });
     gsap.set(scrollIndicator, { opacity: 0 });
+    gsap.set(whyEPage, { yPercent: 0 });
 
     var tl = gsap.timeline({
       onComplete: function() {
         isTransitioning = false;
         currentView = 'intro';
-        forwardAccum = 0;
-        reverseAccum = 0;
+        resetAccums();
         updateNav();
       }
     });
@@ -384,18 +549,21 @@ function initIntroTransition() {
 
     if (prevView === 'portfolio') {
       deactivatePortfolio();
-      gsap.set(introPage, { yPercent: -100 });
-      introPage.style.pointerEvents = 'none';
     }
 
+    gsap.set(introPage, { yPercent: -100 });
+    gsap.set(whyEPage, { yPercent: -100 });
+    introPage.style.pointerEvents = 'none';
+    whyEPage.style.pointerEvents = 'none';
+
     if (whatIsEPage) whatIsEPage.style.pointerEvents = 'auto';
+    resetEnvDiagram();
 
     var tl = gsap.timeline({
       onComplete: function() {
         isTransitioning = false;
         currentView = 'whatIsE';
-        forwardAccum = 0; reverseAccum = 0;
-        introPage.style.pointerEvents = 'none';
+        resetAccums();
         updateNav();
         animateEnvDiagram();
       }
@@ -406,14 +574,57 @@ function initIntroTransition() {
         .to(scrollIndicator, { opacity: 0, duration: 0.2 }, 0)
         .to(introPage, { yPercent: -100, duration: 0.7, ease: 'power3.inOut' }, 0.1)
         .to(whatIsEPage, { opacity: 1, duration: 0.65, ease: 'power2.inOut' }, 0.25);
+    } else if (prevView === 'mindsets') {
+      tl.to(mindsetsPage, { opacity: 0, duration: 0.4, ease: 'power2.inOut',
+        onComplete: function() { mindsetsPage.style.pointerEvents = 'none'; }
+      }, 0)
+      .to(whatIsEPage, { opacity: 1, duration: 0.5, ease: 'power2.inOut' }, 0.1);
     } else {
       tl.to(whatIsEPage, { opacity: 1, duration: 0.6, ease: 'power2.inOut' }, 0);
     }
   }
 
-  if (navJourney) navJourney.addEventListener('click', function() { transitionToPortfolio(); });
+  function transitionToMindsets() {
+    if (isTransitioning || currentView === 'mindsets') return;
+    isTransitioning = true;
+    var prevView = currentView;
+
+    if (prevView === 'portfolio') deactivatePortfolio();
+
+    gsap.set(introPage, { yPercent: -100 });
+    gsap.set(whyEPage, { yPercent: -100 });
+    introPage.style.pointerEvents = 'none';
+    whyEPage.style.pointerEvents = 'none';
+
+    if (mindsetsPage) mindsetsPage.style.pointerEvents = 'auto';
+    resetMindsets();
+
+    var tl = gsap.timeline({
+      onComplete: function() {
+        isTransitioning = false;
+        currentView = 'mindsets';
+        resetAccums();
+        updateNav();
+        animateMindsets();
+      }
+    });
+
+    if (prevView === 'whatIsE') {
+      tl.to(whatIsEPage, { opacity: 0, duration: 0.5, ease: 'power2.inOut',
+        onComplete: function() { whatIsEPage.style.pointerEvents = 'none'; }
+      }, 0)
+      .to(mindsetsPage, { opacity: 1, duration: 0.5, ease: 'power2.inOut' }, 0.1);
+    } else {
+      if (whatIsEPage) { gsap.set(whatIsEPage, { opacity: 0 }); whatIsEPage.style.pointerEvents = 'none'; }
+      tl.to(mindsetsPage, { opacity: 1, duration: 0.6, ease: 'power2.inOut' }, 0);
+    }
+  }
+
   if (navIntro) navIntro.addEventListener('click', function() { transitionToIntro(); });
+  if (navWhyE) navWhyE.addEventListener('click', function() { transitionToWhyE(); });
+  if (navJourney) navJourney.addEventListener('click', function() { transitionToPortfolio(); });
   if (navWhatIsE) navWhatIsE.addEventListener('click', function() { transitionToWhatIsE(); });
+  if (navMindsets) navMindsets.addEventListener('click', function() { transitionToMindsets(); });
 
   window.addEventListener('wheel', function(e) {
     handleScroll(e.deltaY);
@@ -432,7 +643,7 @@ function initIntroTransition() {
 }
 
 /* ==========================================
-   What is E — Environment Design Diagram
+   Diverging Career Paths — Environment Design Diagram
    ========================================== */
 function buildEnvDesignDiagram() {
   var svg = document.getElementById('envDesignSvg');
@@ -452,26 +663,30 @@ function buildEnvDesignDiagram() {
   var cX = 175, cY = 340;
 
   var primaries = [
-    { id: 'set',      label: 'Set design',                   x: 368, y: 165 },
-    { id: 'xr',       label: 'XR design',                    x: 428, y: 262 },
-    { id: 'interior', label: 'Interior Design',              x: 482, y: 368 },
-    { id: 'exp',      label: 'Experiential Branding Design', x: 395, y: 488 },
+    { id: 'set', label: 'Set design',                   x: 368, y: 175, type: 'creative' },
+    { id: 'xr',  label: 'XR design',                    x: 428, y: 340, type: 'technical' },
+    { id: 'exp', label: 'Experiential Branding Design', x: 395, y: 505, type: 'creative' },
   ];
 
   var secondaries = [
-    { label: 'technical artist',               x: 568, y: 98,  parent: 'set' },
-    { label: '3D artist',                      x: 592, y: 185, parent: 'set' },
-    { label: 'technical artist',               x: 638, y: 198, parent: 'xr'  },
-    { label: 'product design',                 x: 658, y: 270, parent: 'xr'  },
-    { label: 'product design prototyper',      x: 635, y: 345, parent: 'xr'  },
-    { label: 'Environmental graphic designer', x: 612, y: 440, parent: 'exp' },
-    { label: 'art director',                   x: 638, y: 508, parent: 'exp' },
-    { label: 'creative technologist',          x: 612, y: 575, parent: 'exp' },
+    { id: 'ta-set',   label: 'technical artist (set)',           x: 568, y: 105, parent: 'set', type: 'technical' },
+    { id: '3d',       label: '3D artist',                       x: 592, y: 225, parent: 'set', type: 'creative' },
+    { id: 'ta-xr',    label: 'technical artist (XR)',            x: 638, y: 270, parent: 'xr',  type: 'technical' },
+    { id: 'pd',       label: 'product design',                  x: 658, y: 340, parent: 'xr',  type: 'creative' },
+    { id: 'pd-proto', label: 'product design prototyper',       x: 635, y: 410, parent: 'xr',  type: 'technical' },
+    { id: 'env-gd',   label: 'Environmental graphic designer',  x: 612, y: 450, parent: 'exp', type: 'creative' },
+    { id: 'art-dir',  label: 'art director',                    x: 638, y: 525, parent: 'exp', type: 'creative' },
+    { id: 'ct',       label: 'creative technologist',           x: 612, y: 590, parent: 'exp', type: 'technical' },
   ];
 
   // Lines
   var linesG = document.createElementNS(NS, 'g');
   linesG.setAttribute('id', 'diagram-lines');
+
+  linesG.appendChild(el('line', {
+    x1: 0, y1: cY, x2: cX, y2: cY,
+    stroke: '#1a1a1a', 'stroke-width': '0.75', opacity: '0.28'
+  }));
 
   primaries.forEach(function(p) {
     linesG.appendChild(el('line', {
@@ -491,19 +706,48 @@ function buildEnvDesignDiagram() {
 
   svg.appendChild(linesG);
 
-  // Circles
-  var circlesG = document.createElementNS(NS, 'g');
-  circlesG.setAttribute('id', 'env-circles');
+  // Shapes — circles for creative roles, diamonds for technical roles
+  var shapesG = document.createElementNS(NS, 'g');
+  shapesG.setAttribute('id', 'env-shapes');
+  var shapeRefs = {};
 
-  circlesG.appendChild(el('circle', { cx: cX, cy: cY, r: '7', fill: '#1a1a1a' }));
+  function makeDiamondPoints(cx, cy, r) {
+    return cx + ',' + (cy - r) + ' ' + (cx + r) + ',' + cy + ' ' + cx + ',' + (cy + r) + ' ' + (cx - r) + ',' + cy;
+  }
+
+  shapesG.appendChild(el('circle', { cx: cX, cy: cY, r: '7', fill: '#1a1a1a' }));
+
   primaries.forEach(function(p) {
-    circlesG.appendChild(el('circle', { cx: p.x, cy: p.y, r: '4.5', fill: '#1a1a1a' }));
-  });
-  secondaries.forEach(function(s) {
-    circlesG.appendChild(el('circle', { cx: s.x, cy: s.y, r: '3', fill: '#666' }));
+    var shape;
+    if (p.type === 'technical') {
+      shape = el('polygon', {
+        points: makeDiamondPoints(p.x, p.y, 5.5),
+        fill: '#1a1a1a',
+        'data-cx': p.x, 'data-cy': p.y
+      });
+    } else {
+      shape = el('circle', { cx: p.x, cy: p.y, r: '4.5', fill: '#1a1a1a' });
+    }
+    shapeRefs[p.id] = shape;
+    shapesG.appendChild(shape);
   });
 
-  svg.appendChild(circlesG);
+  secondaries.forEach(function(s) {
+    var shape;
+    if (s.type === 'technical') {
+      shape = el('polygon', {
+        points: makeDiamondPoints(s.x, s.y, 3.5),
+        fill: '#666',
+        'data-cx': s.x, 'data-cy': s.y
+      });
+    } else {
+      shape = el('circle', { cx: s.x, cy: s.y, r: '3', fill: '#666' });
+    }
+    shapeRefs[s.id] = shape;
+    shapesG.appendChild(shape);
+  });
+
+  svg.appendChild(shapesG);
 
   // Labels
   var labelsG = document.createElementNS(NS, 'g');
@@ -534,40 +778,342 @@ function buildEnvDesignDiagram() {
   });
 
   svg.appendChild(labelsG);
+
+  // Hover hit targets
+  var hitG = document.createElementNS(NS, 'g');
+  hitG.setAttribute('id', 'env-hit-targets');
+  var hoverTimer = null;
+
+  function scheduleHide() {
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(hideRoleInfo, 250);
+  }
+
+  function cancelHide() {
+    clearTimeout(hoverTimer);
+  }
+
+  primaries.forEach(function(p) {
+    var hit = el('circle', { cx: p.x, cy: p.y, r: '20', fill: 'transparent', style: 'cursor: pointer;' });
+    hit.addEventListener('mouseenter', function() {
+      cancelHide();
+      showRoleInfo(p.id);
+      if (p.type === 'technical') {
+        gsap.to(shapeRefs[p.id], { scale: 1.5, svgOrigin: p.x + ' ' + p.y, duration: 0.2, ease: 'power2.out' });
+      } else {
+        gsap.to(shapeRefs[p.id], { attr: { r: 7 }, duration: 0.2, ease: 'power2.out' });
+      }
+      var cb = document.getElementById('cursorBox');
+      var cf = document.getElementById('cursorFill');
+      if (cb) cb.style.transform = 'translate(-50%, -50%) scale(0.5)';
+      if (cf) cf.style.clipPath = 'inset(0%)';
+    });
+    hit.addEventListener('mouseleave', function() {
+      scheduleHide();
+      if (p.type === 'technical') {
+        gsap.to(shapeRefs[p.id], { scale: 1, svgOrigin: p.x + ' ' + p.y, duration: 0.2, ease: 'power2.out' });
+      } else {
+        gsap.to(shapeRefs[p.id], { attr: { r: 4.5 }, duration: 0.2, ease: 'power2.out' });
+      }
+      var cb = document.getElementById('cursorBox');
+      var cf = document.getElementById('cursorFill');
+      if (cb) cb.style.transform = 'translate(-50%, -50%) scale(1)';
+      if (cf) cf.style.clipPath = 'inset(100%)';
+    });
+    hitG.appendChild(hit);
+  });
+
+  secondaries.forEach(function(s) {
+    var hit = el('circle', { cx: s.x, cy: s.y, r: '16', fill: 'transparent', style: 'cursor: pointer;' });
+    hit.addEventListener('mouseenter', function() {
+      cancelHide();
+      showRoleInfo(s.id);
+      if (s.type === 'technical') {
+        gsap.to(shapeRefs[s.id], { scale: 1.5, svgOrigin: s.x + ' ' + s.y, duration: 0.2, ease: 'power2.out' });
+      } else {
+        gsap.to(shapeRefs[s.id], { attr: { r: 5 }, duration: 0.2, ease: 'power2.out' });
+      }
+      var cb = document.getElementById('cursorBox');
+      var cf = document.getElementById('cursorFill');
+      if (cb) cb.style.transform = 'translate(-50%, -50%) scale(0.5)';
+      if (cf) cf.style.clipPath = 'inset(0%)';
+    });
+    hit.addEventListener('mouseleave', function() {
+      scheduleHide();
+      if (s.type === 'technical') {
+        gsap.to(shapeRefs[s.id], { scale: 1, svgOrigin: s.x + ' ' + s.y, duration: 0.2, ease: 'power2.out' });
+      } else {
+        gsap.to(shapeRefs[s.id], { attr: { r: 3 }, duration: 0.2, ease: 'power2.out' });
+      }
+      var cb = document.getElementById('cursorBox');
+      var cf = document.getElementById('cursorFill');
+      if (cb) cb.style.transform = 'translate(-50%, -50%) scale(1)';
+      if (cf) cf.style.clipPath = 'inset(100%)';
+    });
+    hitG.appendChild(hit);
+  });
+
+  svg.appendChild(hitG);
+
+  var legendG = document.createElementNS(NS, 'g');
+  legendG.setAttribute('id', 'env-legend');
+  legendG.appendChild(el('circle', { cx: '40', cy: '618', r: '3.5', fill: '#1a1a1a' }));
+  legendG.appendChild(el('text', { x: '52', y: '622', 'font-size': '9', 'font-family': ff, fill: '#999', 'font-weight': '400' }, 'Creative'));
+  legendG.appendChild(el('polygon', { points: makeDiamondPoints(40, 642, 3.5), fill: '#1a1a1a' }));
+  legendG.appendChild(el('text', { x: '52', y: '646', 'font-size': '9', 'font-family': ff, fill: '#999', 'font-weight': '400' }, 'Technical'));
+  svg.appendChild(legendG);
+
+  resetEnvDiagram();
+
+  var closeBtn = document.getElementById('envInfoClose');
+  var cardEl = document.getElementById('envInfoCard');
+  if (closeBtn) closeBtn.addEventListener('click', function(e) { e.stopPropagation(); cancelHide(); hideRoleInfo(); });
+  if (cardEl) {
+    cardEl.addEventListener('mouseenter', cancelHide);
+    cardEl.addEventListener('mouseleave', scheduleHide);
+  }
+}
+
+/* ==========================================
+   Role Info Data & Overlay
+   ========================================== */
+var roleData = {
+  set: {
+    title: 'Set Design',
+    desc: 'Crafts physical and digital environments for film, television, theater, and live events. Combines architecture, art direction, and storytelling to build immersive worlds that serve the narrative.',
+    tools: 'SketchUp, Vectorworks, Cinema 4D, AutoCAD, Adobe Photoshop',
+    img: 'assets/why-e.jpg'
+  },
+  xr: {
+    title: 'XR Design',
+    desc: 'Designs immersive spatial experiences across virtual, augmented, and mixed reality platforms. Focuses on 3D interaction patterns, spatial UI, and embodied user experiences at the frontier of computing.',
+    tools: 'Unity, Unreal Engine, Figma, Blender, Adobe Aero, ShapesXR',
+    img: 'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=600&h=300&fit=crop&auto=format'
+  },
+  exp: {
+    title: 'Experiential Branding Design',
+    desc: 'Creates immersive brand experiences through spatial installations, pop-ups, and multi-sensory environments that forge emotional connections between audiences and brand narratives.',
+    tools: 'Cinema 4D, After Effects, TouchDesigner, SketchUp, Arduino',
+    img: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&h=300&fit=crop&auto=format'
+  },
+  'ta-set': {
+    title: 'Technical Artist — Set Design',
+    desc: 'Bridges the gap between art and engineering in production pipelines. Optimizes assets, builds shaders, and creates tools that empower creative teams to work more efficiently.',
+    tools: 'Maya, Houdini, Python, HLSL/GLSL, Unity, Unreal Engine',
+    img: 'assets/tech-artist-set.jpeg'
+  },
+  '3d': {
+    title: '3D Artist',
+    desc: 'Creates detailed 3D models, textures, lighting setups, and rendered environments. Brings concepts to life through digital sculpting, look development, and visualization.',
+    tools: 'Blender, Maya, ZBrush, Substance Painter, Cinema 4D',
+    img: 'assets/3d-artist-set.png'
+  },
+  'ta-xr': {
+    title: 'Technical Artist — XR Design',
+    desc: 'Develops real-time rendering solutions, optimizes XR assets for performance, and builds interaction systems for spatial computing platforms.',
+    tools: 'Unity, Unreal Engine, Python, Shader Graph, Blender',
+    img: 'assets/tech-artist-xr-design.jpg'
+  },
+  pd: {
+    title: 'Product Designer',
+    desc: 'Designs user-centered digital products and interfaces for spatial platforms. Defines interaction patterns, user flows, and visual systems for XR and emerging tech experiences.',
+    tools: 'Figma, Protopie, Unity, Adobe XD, Framer',
+    img: 'assets/xr-design-product-design.jpg'
+  },
+  'pd-proto': {
+    title: 'Product Design Prototyper',
+    desc: 'Builds high-fidelity interactive prototypes that simulate real product experiences. Bridges the gap between design intent and engineering feasibility through functional demos.',
+    tools: 'Protopie, Framer, Unity, SwiftUI, React, After Effects',
+    img: 'assets/xr-design-product-design-prototyper.gif'
+  },
+  'env-gd': {
+    title: 'Environmental Graphic Designer',
+    desc: 'Designs wayfinding systems, signage, and branded graphics that integrate with architectural spaces. Guides human movement and creates a sense of place through visual communication.',
+    tools: 'Adobe Illustrator, SketchUp, AutoCAD, Rhino, InDesign',
+    img: 'assets/environmental-graphics.jpeg'
+  },
+  'art-dir': {
+    title: 'Art Director',
+    desc: 'Leads the visual creative direction for campaigns, brand experiences, and installations. Guides teams to deliver cohesive, impactful visual narratives across media.',
+    tools: 'Adobe Creative Suite, Figma, Cinema 4D, Keynote, Midjourney',
+    img: 'assets/art-director.webp'
+  },
+  ct: {
+    title: 'Creative Technologist',
+    desc: 'Combines design thinking with technical prototyping to create novel interactive experiences. Uses emerging technologies to push creative boundaries and solve complex problems.',
+    tools: 'TouchDesigner, p5.js, Arduino, Three.js, Unity, Python',
+    img: 'assets/creative-tech-experiential-branding.webp'
+  }
+};
+
+function showRoleInfo(roleId) {
+  var data = roleData[roleId];
+  if (!data) return;
+
+  var overlay = document.getElementById('envInfoOverlay');
+  var card = document.getElementById('envInfoCard');
+
+  document.getElementById('envInfoImg').src = data.img;
+  document.getElementById('envInfoImg').alt = data.title;
+  document.getElementById('envInfoTitle').textContent = data.title;
+  document.getElementById('envInfoDesc').textContent = data.desc;
+  document.getElementById('envInfoTools').textContent = data.tools;
+
+  gsap.killTweensOf(overlay);
+  gsap.killTweensOf(card);
+  card.style.pointerEvents = 'auto';
+  gsap.to(overlay, { opacity: 1, duration: 0.25, ease: 'power2.out' });
+  gsap.to(card, { y: 0, duration: 0.3, ease: 'power2.out' });
+}
+
+function hideRoleInfo() {
+  var overlay = document.getElementById('envInfoOverlay');
+  var card = document.getElementById('envInfoCard');
+  if (!overlay) return;
+
+  gsap.killTweensOf(overlay);
+  gsap.killTweensOf(card);
+  gsap.to(card, { y: 8, duration: 0.15, ease: 'power2.in' });
+  gsap.to(overlay, {
+    opacity: 0, duration: 0.2, ease: 'power2.in',
+    onComplete: function() { card.style.pointerEvents = 'none'; }
+  });
+}
+
+/* ==========================================
+   Why I Chose E — Draggable Mood Board
+   ========================================== */
+function initWhyEDrag() {
+  var container = document.getElementById('whyEImages');
+  if (!container) return;
+
+  var items = container.querySelectorAll('.why-e-item');
+  var maxZ = 10;
+  var dragItem = null;
+  var startX, startY, origX, origY;
+
+  items.forEach(function(item) {
+    item.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragItem = item;
+      item.classList.add('dragging');
+      maxZ++;
+      item.style.zIndex = maxZ;
+      startX = e.clientX;
+      startY = e.clientY;
+      origX = item.offsetLeft;
+      origY = item.offsetTop;
+    });
+
+    item.addEventListener('mouseenter', function() {
+      var cb = document.getElementById('cursorBox');
+      var cf = document.getElementById('cursorFill');
+      if (cb) cb.style.transform = 'translate(-50%, -50%) scale(0.5)';
+      if (cf) cf.style.clipPath = 'inset(0%)';
+    });
+    item.addEventListener('mouseleave', function() {
+      var cb = document.getElementById('cursorBox');
+      var cf = document.getElementById('cursorFill');
+      if (cb) cb.style.transform = 'translate(-50%, -50%) scale(1)';
+      if (cf) cf.style.clipPath = 'inset(100%)';
+    });
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!dragItem) return;
+    var dx = e.clientX - startX;
+    var dy = e.clientY - startY;
+    dragItem.style.left = (origX + dx) + 'px';
+    dragItem.style.top = (origY + dy) + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!dragItem) return;
+    dragItem.classList.remove('dragging');
+    dragItem = null;
+  });
+}
+
+function resetMindsets() {
+  var title = document.getElementById('mindsetsTitle');
+  var content = document.getElementById('mindsetsContent');
+  if (title) gsap.set(title, { opacity: 0, y: 20 });
+  if (content) {
+    gsap.set(content, { opacity: 1 });
+    content.querySelectorAll(':scope > div > div').forEach(function(item) {
+      gsap.set(item, { opacity: 0, y: 16 });
+    });
+  }
+}
+
+function animateMindsets() {
+  var title = document.getElementById('mindsetsTitle');
+  var content = document.getElementById('mindsetsContent');
+  if (!title || !content) return;
+
+  gsap.to(title, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' });
+
+  gsap.set(content, { opacity: 1 });
+  var items = content.querySelectorAll(':scope > div > div');
+  items.forEach(function(item, i) {
+    gsap.to(item, { opacity: 1, y: 0, duration: 0.6, delay: 0.25 + i * 0.15, ease: 'power2.out' });
+  });
+}
+
+function resetEnvDiagram() {
+  gsap.set('#diagram-lines line', { opacity: 0 });
+  gsap.set('#env-shapes circle', { opacity: 0 });
+  gsap.set('#env-shapes polygon', { opacity: 0, scale: 1 });
+  gsap.set('#env-labels text', { opacity: 0 });
+  gsap.set('#env-legend', { opacity: 0 });
 }
 
 function animateEnvDiagram() {
+  var overlay = document.getElementById('envInfoOverlay');
+  if (overlay) { overlay.style.opacity = '0'; overlay.style.pointerEvents = 'none'; }
   var lines = document.querySelectorAll('#diagram-lines line');
-  var circles = document.querySelectorAll('#env-circles circle');
+  var shapes = document.querySelectorAll('#env-shapes circle, #env-shapes polygon');
   var labels = document.querySelectorAll('#env-labels text');
 
-  // Reset to hidden
   gsap.set(lines, { opacity: 0 });
-  gsap.set(circles, { opacity: 0 });
+  gsap.set('#env-shapes circle', { opacity: 0 });
+  gsap.set('#env-shapes polygon', { opacity: 0, scale: 1 });
   gsap.set(labels, { opacity: 0 });
 
-  // Animate lines
   lines.forEach(function(line, i) {
     var target = parseFloat(line.getAttribute('opacity') || 0.25);
     gsap.to(line, { opacity: target, duration: 0.7, delay: 0.05 + i * 0.065, ease: 'power2.out' });
   });
 
-  // Animate circles — grow from r=0
-  circles.forEach(function(circle, i) {
-    var finalR = circle.getAttribute('r');
-    gsap.fromTo(circle,
-      { attr: { r: 0 }, opacity: 0 },
-      { attr: { r: finalR }, opacity: 1, duration: 0.45, delay: 0.2 + i * 0.07, ease: 'back.out(1.7)' }
-    );
+  shapes.forEach(function(shape, i) {
+    if (shape.tagName === 'circle') {
+      var finalR = shape.getAttribute('r');
+      gsap.fromTo(shape,
+        { attr: { r: 0 }, opacity: 0 },
+        { attr: { r: finalR }, opacity: 1, duration: 0.45, delay: 0.2 + i * 0.07, ease: 'back.out(1.7)' }
+      );
+    } else {
+      var cx = parseFloat(shape.dataset.cx);
+      var cy = parseFloat(shape.dataset.cy);
+      gsap.fromTo(shape,
+        { scale: 0, opacity: 0, svgOrigin: cx + ' ' + cy },
+        { scale: 1, opacity: 1, duration: 0.45, delay: 0.2 + i * 0.07, ease: 'back.out(1.7)' }
+      );
+    }
   });
 
-  // Animate labels
   labels.forEach(function(label, i) {
     gsap.fromTo(label,
       { opacity: 0, x: -4 },
       { opacity: 1, x: 0, duration: 0.5, delay: 0.4 + i * 0.045, ease: 'power2.out' }
     );
   });
+
+  var legend = document.getElementById('env-legend');
+  if (legend) {
+    gsap.fromTo(legend, { opacity: 0 }, { opacity: 1, duration: 0.5, delay: 0.8, ease: 'power2.out' });
+  }
 }
 
 /* ==========================================
